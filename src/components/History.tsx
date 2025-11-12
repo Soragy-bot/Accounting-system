@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CashEntry } from '../types';
-import { getHistory, clearHistory } from '../utils/storage';
+import { getHistory, clearHistory, deleteHistoryEntry } from '../utils/storage';
 import styles from './History.module.css';
 
 interface HistoryProps {
@@ -31,6 +31,13 @@ export const History: React.FC<HistoryProps> = ({ onLoadEntry, refreshTrigger })
   const handleLoad = (entry: CashEntry) => {
     onLoadEntry(entry);
     setIsOpen(false);
+  };
+
+  const handleDelete = (id: string) => {
+    if (window.confirm('Вы уверены, что хотите удалить эту запись?')) {
+      deleteHistoryEntry(id);
+      loadHistory();
+    }
   };
 
   const formatDate = (timestamp: number): string => {
@@ -98,12 +105,21 @@ export const History: React.FC<HistoryProps> = ({ onLoadEntry, refreshTrigger })
               <div className={styles.entryDetails}>
                 <span>Начальная сумма: {entry.initialAmount.toFixed(2)} ₽</span>
               </div>
-              <button
-                onClick={() => handleLoad(entry)}
-                className={styles.loadButton}
-              >
-                Загрузить
-              </button>
+              <div className={styles.entryActions}>
+                <button
+                  onClick={() => handleLoad(entry)}
+                  className={styles.loadButton}
+                >
+                  Загрузить
+                </button>
+                <button
+                  onClick={() => handleDelete(entry.id)}
+                  className={styles.deleteButton}
+                  title="Удалить запись"
+                >
+                  🗑️
+                </button>
+              </div>
             </div>
           ))}
         </div>

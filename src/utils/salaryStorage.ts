@@ -25,3 +25,9 @@ export const clearHistory = (): void => {
   localStorage.removeItem(STORAGE_KEY);
 };
 
+export const deleteSalaryEntry = (id: string): void => {
+  const history = getHistory();
+  const filteredHistory = history.filter((entry) => entry.id !== id);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(filteredHistory));
+};
+

@@ -130,8 +130,14 @@
   transition: color 0.3s ease;
 }
 
+.entryActions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
 .loadButton {
-  width: 100%;
+  flex: 1;
   padding: 0.5rem;
   background: var(--button-bg);
   color: white;
@@ -144,6 +150,28 @@
 
 .loadButton:hover {
   background: var(--button-bg-hover);
+}
+
+.deleteButton {
+  padding: 0.5rem 0.75rem;
+  background: var(--accent-danger);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  line-height: 1;
+  min-width: 40px;
+}
+
+.deleteButton:hover {
+  background: var(--accent-danger-hover);
+  transform: scale(1.05);
+}
+
+.deleteButton:active {
+  transform: scale(0.95);
 }
 
 @media (max-width: 600px) {

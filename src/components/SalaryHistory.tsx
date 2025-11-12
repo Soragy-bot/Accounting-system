@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { SalaryCalculation } from '../types';
-import { getHistory, clearHistory } from '../utils/salaryStorage';
+import { getHistory, clearHistory, deleteSalaryEntry } from '../utils/salaryStorage';
 import styles from './SalaryHistory.module.css';
 
 interface SalaryHistoryProps {
@@ -31,6 +31,13 @@ export const SalaryHistory: React.FC<SalaryHistoryProps> = ({ onLoadEntry, refre
   const handleLoad = (entry: SalaryCalculation) => {
     onLoadEntry(entry);
     setIsOpen(false);
+  };
+
+  const handleDelete = (id: string) => {
+    if (window.confirm('Вы уверены, что хотите удалить эту запись?')) {
+      deleteSalaryEntry(id);
+      loadHistory();
+    }
   };
 
   const formatDate = (timestamp: number): string => {
@@ -94,12 +101,21 @@ export const SalaryHistory: React.FC<SalaryHistoryProps> = ({ onLoadEntry, refre
                 <span>Дней: {entry.workDays.length}</span>
                 <span>Ставка: {formatAmount(entry.dailyRate)}/день</span>
               </div>
-              <button
-                onClick={() => handleLoad(entry)}
-                className={styles.loadButton}
-              >
-                Загрузить
-              </button>
+              <div className={styles.entryActions}>
+                <button
+                  onClick={() => handleLoad(entry)}
+                  className={styles.loadButton}
+                >
+                  Загрузить
+                </button>
+                <button
+                  onClick={() => handleDelete(entry.id)}
+                  className={styles.deleteButton}
+                  title="Удалить запись"
+                >
+                  🗑️
+                </button>
+              </div>
             </div>
           ))}
         </div>
