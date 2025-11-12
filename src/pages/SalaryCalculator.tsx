@@ -8,6 +8,7 @@ import { SalaryHistory } from '../components/SalaryHistory';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { calculateSalaryBreakdown } from '../utils/salaryCalculations';
 import { saveSalaryEntry } from '../utils/salaryStorage';
+import { exportSalaryToExcel } from '../utils/salaryExport';
 import { SalaryState, SalaryCalculation } from '../types';
 import styles from './SalaryCalculator.module.css';
 
@@ -126,6 +127,19 @@ export const SalaryCalculator: React.FC = () => {
     }
   }, []);
 
+  const handleExportToExcel = useCallback(() => {
+    if (state.workDays.length === 0) {
+      alert('Нет данных для экспорта. Выберите рабочие дни.');
+      return;
+    }
+    try {
+      exportSalaryToExcel(state, breakdown);
+    } catch (error) {
+      console.error('Ошибка при экспорте в Excel:', error);
+      alert('Произошла ошибка при экспорте в Excel.');
+    }
+  }, [state, breakdown]);
+
   return (
     <div className={styles.app}>
       <header className={styles.header}>
@@ -173,6 +187,9 @@ export const SalaryCalculator: React.FC = () => {
         <div className={styles.actions}>
           <button onClick={handleSave} className={styles.saveButton} disabled={state.workDays.length === 0}>
             Сохранить расчет
+          </button>
+          <button onClick={handleExportToExcel} className={styles.exportButton} disabled={state.workDays.length === 0}>
+            Экспорт в Excel
           </button>
           <button onClick={handleReset} className={styles.resetButton}>
             Сбросить

@@ -72,6 +72,7 @@
 }
 
 .saveButton,
+.exportButton,
 .resetButton {
   flex: 1;
   min-width: 150px;
@@ -101,6 +102,22 @@
   cursor: not-allowed;
 }
 
+.exportButton {
+  background: var(--accent-primary, #4a90e2);
+  color: white;
+}
+
+.exportButton:hover:not(:disabled) {
+  background: var(--accent-primary-hover, #357abd);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.exportButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .resetButton {
   background: var(--accent-danger);
   color: white;
@@ -113,6 +130,7 @@
 }
 
 .saveButton:active:not(:disabled),
+.exportButton:active:not(:disabled),
 .resetButton:active {
   transform: translateY(0);
 }
@@ -153,6 +171,7 @@
   }
 
   .saveButton,
+  .exportButton,
   .resetButton {
     width: 100%;
   }
