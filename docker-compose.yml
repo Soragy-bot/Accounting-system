@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  accounting-system:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: accounting-system
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    networks:
+      - accounting-network
+
+networks:
+  accounting-network:
+    driver: bridge
+
