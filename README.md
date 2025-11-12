@@ -76,8 +76,9 @@ docker-compose up -d --build
 ```
 
 4. **Приложение будет доступно по адресу:**
-   - `http://localhost` (локально)
-   - `http://your-server-ip` (на сервере)
+   - `http://localhost:27015` (локально)
+   - `http://utilites.psihbolnitsa.ru:27015` (через домен)
+   - `http://your-server-ip:27015` (напрямую по IP)
 
 ### Управление контейнером
 
@@ -126,19 +127,56 @@ docker rm -f accounting-system
 docker logs -f accounting-system
 ```
 
-### Настройка порта
+### Настройка домена и порта
 
-Если порт 80 занят, измените порт в `docker-compose.yml`:
+Приложение настроено на работу с доменом `utilites.psihbolnitsa.ru` на порту `27015`.
+
+#### Настройка DNS
+
+1. **Настройте DNS запись** для домена `utilites.psihbolnitsa.ru`:
+   - Тип: `A`
+   - Имя: `utilites` (или `@` для корневого домена)
+   - Значение: IP-адрес вашего сервера
+   - TTL: 3600 (или по умолчанию)
+
+#### Настройка внешнего Nginx (опционально)
+
+Если на сервере уже установлен Nginx, можно настроить проксирование:
+
+```nginx
+server {
+    listen 80;
+    server_name utilites.psihbolnitsa.ru;
+
+    location / {
+        proxy_pass http://localhost:27015;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+После настройки перезапустите внешний Nginx:
+```bash
+sudo nginx -t  # Проверка конфигурации
+sudo systemctl reload nginx  # Перезагрузка
+```
+
+#### Изменение порта
+
+Если нужно изменить порт, отредактируйте `docker-compose.yml`:
 
 ```yaml
 ports:
-  - "8080:80"  # Внешний порт:Внутренний порт
+  - "27015:80"  # Внешний порт:Внутренний порт
 ```
 
 Или при запуске через `docker run`:
 
 ```bash
-docker run -d -p 8080:80 --name accounting-system accounting-system:latest
+docker run -d -p 27015:80 --name accounting-system accounting-system:latest
 ```
 
 ### Обновление приложения

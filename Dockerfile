@@ -1,23 +1,30 @@
 # =========================================
 # Stage 1: Build the React Application
 # =========================================
-ARG NODE_VERSION=20-alpine
+# Using regular Node.js (not Alpine) to avoid issues with optional dependencies
+# Alpine uses musl which has problems with rollup's optional dependencies
+ARG NODE_VERSION=22-slim
 
 FROM node:${NODE_VERSION} AS builder
 
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy package-related files first to leverage Docker's caching mechanism
-COPY package.json package-lock.json ./
+# Copy package.json first
+COPY package.json ./
 
-# Install project dependencies using npm ci (ensures a clean, reproducible install)
-RUN --mount=type=cache,target=/root/.npm npm ci
+# Install project dependencies
+# Removing package-lock.json to fix npm bug with optional dependencies
+# This ensures rollup's native binaries are properly installed
+RUN --mount=type=cache,target=/root/.npm \
+    npm install --no-audit
 
 # Copy the rest of the application source code into the container
 COPY . .
 
 # Build the React application (outputs to /app/dist)
+# Set NODE_ENV to production for optimal build
+ENV NODE_ENV=production
 RUN npm run build
 
 # =========================================
