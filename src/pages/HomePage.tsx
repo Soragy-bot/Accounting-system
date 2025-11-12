@@ -64,7 +64,7 @@ export const HomePage: React.FC = () => {
           <Link to="/cash-counter" className={styles.primaryButton}>
             <span className={styles.buttonIcon}>💰</span>
             <span className={styles.buttonText}>
-              <span className={styles.buttonTitle}>Начать подсчет</span>
+              <span className={styles.buttonTitle}>Подсчет кассы</span>
               <span className={styles.buttonDescription}>
                 Перейти к подсчету кассы
               </span>
