@@ -106,7 +106,7 @@ export const MoneyInput: React.FC<MoneyInputProps> = ({
 
   const renderMoneyInput = (
     denominations: readonly number[],
-    counts: MoneyCount,
+    _counts: MoneyCount,
     category: 'bills' | 'coinsRubles' | 'coinsKopecks',
     unit: string
   ) => {

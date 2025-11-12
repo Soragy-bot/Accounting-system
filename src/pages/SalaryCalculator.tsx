@@ -156,7 +156,7 @@ export const SalaryCalculator: React.FC = () => {
           selectedDates={state.workDays}
           onDatesChange={handleWorkDaysChange}
         />
-        
+
         <SalaryInput
           dailyRate={state.dailyRate}
           salesPercentage={state.salesPercentage}
