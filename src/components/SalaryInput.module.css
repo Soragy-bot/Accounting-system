@@ -1,15 +1,17 @@
 .container {
-  background: white;
+  background: var(--card-bg);
   padding: 1.5rem;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
   margin-bottom: 1.5rem;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 
 .title {
   margin: 0 0 1.5rem 0;
   font-size: 1.25rem;
-  color: #333;
+  color: var(--text-primary);
+  transition: color 0.3s ease;
 }
 
 .inputGroup {
@@ -29,21 +31,24 @@
 .labelText {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #555;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
 }
 
 .input {
   padding: 0.75rem;
-  border: 2px solid #ddd;
+  border: 2px solid var(--input-border);
   border-radius: 4px;
   font-size: 1rem;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, background 0.3s ease;
   width: 100%;
+  background: var(--input-bg);
+  color: var(--text-primary);
 }
 
 .input:focus {
   outline: none;
-  border-color: #4a90e2;
+  border-color: var(--input-border-focus);
 }
 
 .input::-webkit-inner-spin-button,

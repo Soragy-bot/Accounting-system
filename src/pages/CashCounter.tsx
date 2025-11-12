@@ -4,6 +4,7 @@ import { InitialAmount } from '../components/InitialAmount';
 import { MoneyInput } from '../components/MoneyInput';
 import { CurrentBalance } from '../components/CurrentBalance';
 import { History } from '../components/History';
+import { ThemeToggle } from '../components/ThemeToggle';
 import { calculateTotal } from '../utils/calculations';
 import { saveHistoryEntry } from '../utils/storage';
 import { CashState, CashEntry, MoneyCount } from '../types';
@@ -83,6 +84,9 @@ export const CashCounter: React.FC = () => {
           ← Назад
         </Link>
         <h1 className={styles.title}>Подсчет Кассы</h1>
+        <div className={styles.headerActions}>
+          <ThemeToggle />
+        </div>
       </header>
       <main className={styles.main}>
         <InitialAmount

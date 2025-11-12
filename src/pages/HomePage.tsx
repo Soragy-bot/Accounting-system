@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getHistory } from '../utils/storage';
 import { CashEntry } from '../types';
+import { ThemeToggle } from '../components/ThemeToggle';
 import styles from './HomePage.module.css';
 
 export const HomePage: React.FC = () => {
@@ -47,10 +48,15 @@ export const HomePage: React.FC = () => {
   return (
     <div className={styles.container}>
       <header className={styles.header}>
-        <h1 className={styles.title}>Система учета</h1>
-        <p className={styles.subtitle}>
-          Удобные инструменты для ведения учета кассы и расчета зарплаты
-        </p>
+        <div className={styles.headerActions}>
+          <ThemeToggle />
+        </div>
+        <div className={styles.headerContent}>
+          <h1 className={styles.title}>Система учета</h1>
+          <p className={styles.subtitle}>
+            Удобные инструменты для ведения учета кассы и расчета зарплаты
+          </p>
+        </div>
       </header>
 
       <main className={styles.main}>

@@ -1,13 +1,30 @@
 .container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
   padding: 2rem 1rem;
+  transition: background 0.3s ease;
 }
 
 .header {
-  text-align: center;
   margin-bottom: 3rem;
   padding: 2rem 1rem;
+  position: relative;
+  text-align: center;
+}
+
+.headerContent {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.headerActions {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  z-index: 10;
 }
 
 .title {
@@ -16,6 +33,7 @@
   font-size: 3rem;
   font-weight: bold;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+  transition: color 0.3s ease;
 }
 
 .subtitle {
@@ -23,6 +41,7 @@
   color: rgba(255, 255, 255, 0.9);
   font-size: 1.2rem;
   font-weight: 300;
+  transition: color 0.3s ease;
 }
 
 .main {
@@ -42,17 +61,17 @@
   align-items: center;
   gap: 1.5rem;
   padding: 2rem;
-  background: white;
+  background: var(--card-bg);
   border-radius: 16px;
   text-decoration: none;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: var(--shadow-lg);
+  transition: transform 0.2s, box-shadow 0.2s, background 0.3s ease;
   cursor: pointer;
 }
 
 .primaryButton:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-xl);
 }
 
 .buttonIcon {
@@ -71,26 +90,30 @@
 .buttonTitle {
   font-size: 1.8rem;
   font-weight: bold;
-  color: #333;
+  color: var(--text-primary);
+  transition: color 0.3s ease;
 }
 
 .buttonDescription {
   font-size: 1rem;
-  color: #666;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
 }
 
 .recentSection {
-  background: white;
+  background: var(--card-bg);
   border-radius: 16px;
   padding: 2rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-lg);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 
 .sectionTitle {
   margin: 0 0 1.5rem 0;
   font-size: 1.5rem;
-  color: #333;
+  color: var(--text-primary);
   font-weight: 600;
+  transition: color 0.3s ease;
 }
 
 .entriesList {
@@ -102,14 +125,14 @@
 
 .entryCard {
   padding: 1rem;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--card-border);
   border-radius: 8px;
-  background: #f8f9fa;
-  transition: background 0.2s;
+  background: var(--entry-card-bg);
+  transition: background 0.2s, border-color 0.3s ease;
 }
 
 .entryCard:hover {
-  background: #f0f0f0;
+  background: var(--entry-card-hover);
 }
 
 .entryHeader {
@@ -123,47 +146,51 @@
 
 .entryDate {
   font-size: 0.9rem;
-  color: #666;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
 }
 
 .entryAmount {
   font-size: 1.2rem;
   font-weight: bold;
   font-variant-numeric: tabular-nums;
+  transition: color 0.3s ease;
 }
 
 .entryAmount.positive {
-  color: #27ae60;
+  color: var(--accent-success);
 }
 
 .entryAmount.negative {
-  color: #e74c3c;
+  color: var(--accent-danger);
 }
 
 .entryDetails {
   font-size: 0.85rem;
-  color: #888;
+  color: var(--text-tertiary);
+  transition: color 0.3s ease;
 }
 
 .viewAllLink {
   display: inline-block;
-  color: #4a90e2;
+  color: var(--accent-primary);
   text-decoration: none;
   font-weight: 600;
   transition: color 0.2s;
 }
 
 .viewAllLink:hover {
-  color: #357abd;
+  color: var(--accent-primary-hover);
   text-decoration: underline;
 }
 
 .emptyState {
   text-align: center;
   padding: 4rem 2rem;
-  background: white;
+  background: var(--card-bg);
   border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-lg);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 
 .emptyIcon {
@@ -175,18 +202,30 @@
   margin: 0 0 0.5rem 0;
   font-size: 1.2rem;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
+  transition: color 0.3s ease;
 }
 
 .emptyDescription {
   margin: 0;
   font-size: 1rem;
-  color: #666;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
 }
 
 @media (max-width: 600px) {
+  .header {
+    padding: 1rem;
+  }
+
+  .headerActions {
+    top: 1rem;
+    right: 1rem;
+  }
+
   .title {
     font-size: 2rem;
+    margin-top: 2.5rem;
   }
 
   .subtitle {

@@ -1,0 +1,51 @@
+.toggleButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  backdrop-filter: blur(10px);
+  white-space: nowrap;
+}
+
+.toggleButton:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+.toggleButton:active {
+  transform: translateY(0);
+}
+
+.icon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.label {
+  font-size: 0.9rem;
+}
+
+@media (max-width: 600px) {
+  .toggleButton {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+  }
+
+  .label {
+    display: none;
+  }
+
+  .icon {
+    font-size: 1.3rem;
+  }
+}
+

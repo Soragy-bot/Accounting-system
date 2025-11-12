@@ -1,7 +1,8 @@
 .app {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
   padding: 1rem;
+  transition: background 0.3s ease;
 }
 
 .header {
@@ -9,6 +10,11 @@
   margin-bottom: 2rem;
   padding: 1.5rem;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .backButton {
@@ -22,13 +28,14 @@
   font-weight: 600;
   padding: 0.5rem 1rem;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--back-button-bg);
   transition: background 0.2s;
   backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .backButton:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--back-button-hover);
 }
 
 .title {
@@ -37,6 +44,19 @@
   font-size: 2.5rem;
   font-weight: bold;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+  flex: 1;
+  text-align: center;
+  transition: color 0.3s ease;
+}
+
+.headerActions {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .main {
@@ -61,18 +81,19 @@
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s, background 0.3s ease, opacity 0.2s;
+  color: white;
 }
 
 .saveButton {
-  background: #27ae60;
+  background: var(--accent-success);
   color: white;
 }
 
 .saveButton:hover:not(:disabled) {
-  background: #229954;
+  background: var(--accent-success-hover);
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-md);
 }
 
 .saveButton:disabled {
@@ -81,14 +102,14 @@
 }
 
 .resetButton {
-  background: #e74c3c;
+  background: var(--accent-danger);
   color: white;
 }
 
 .resetButton:hover {
-  background: #c0392b;
+  background: var(--accent-danger-hover);
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-md);
 }
 
 .saveButton:active:not(:disabled),
@@ -103,12 +124,27 @@
 
   .header {
     padding: 1rem;
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .backButton {
     position: static;
     transform: none;
     display: inline-block;
+    margin-bottom: 1rem;
+    align-self: flex-start;
+  }
+
+  .headerActions {
+    position: static;
+    transform: none;
+    justify-content: center;
+    margin-top: 1rem;
+  }
+
+  .title {
+    order: -1;
     margin-bottom: 1rem;
   }
 

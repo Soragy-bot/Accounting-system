@@ -1,9 +1,10 @@
 .container {
-  background: white;
+  background: var(--card-bg);
   padding: 1.5rem;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
   margin-bottom: 1.5rem;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 
 .header {
@@ -14,7 +15,7 @@
 }
 
 .navButton {
-  background: #4a90e2;
+  background: var(--button-bg);
   color: white;
   border: none;
   border-radius: 4px;
@@ -29,14 +30,15 @@
 }
 
 .navButton:hover {
-  background: #357abd;
+  background: var(--button-bg-hover);
 }
 
 .monthTitle {
   margin: 0;
   font-size: 1.25rem;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
+  transition: color 0.3s ease;
 }
 
 .weekDays {
@@ -49,9 +51,10 @@
 .weekDay {
   text-align: center;
   font-weight: 600;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.9rem;
   padding: 0.5rem;
+  transition: color 0.3s ease;
 }
 
 .calendar {
@@ -65,34 +68,34 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--card-border);
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s;
   font-weight: 500;
-  color: #333;
-  background: white;
+  color: var(--text-primary);
+  background: var(--card-bg);
 }
 
 .day:hover {
-  background: #f0f0f0;
-  border-color: #4a90e2;
+  background: var(--entry-card-hover);
+  border-color: var(--accent-primary);
 }
 
 .day.selected {
-  background: #4a90e2;
+  background: var(--accent-primary);
   color: white;
-  border-color: #4a90e2;
+  border-color: var(--accent-primary);
 }
 
 .day.today {
-  border-color: #27ae60;
+  border-color: var(--accent-success);
   font-weight: bold;
 }
 
 .day.today.selected {
-  background: #27ae60;
-  border-color: #27ae60;
+  background: var(--accent-success);
+  border-color: var(--accent-success);
 }
 
 .emptyDay {
@@ -102,13 +105,15 @@
 .selectedInfo {
   margin-top: 1rem;
   text-align: center;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.9rem;
+  transition: color 0.3s ease;
 }
 
 .selectedInfo strong {
-  color: #333;
+  color: var(--text-primary);
   font-weight: 600;
+  transition: color 0.3s ease;
 }
 
 @media (max-width: 600px) {

@@ -1,16 +1,18 @@
 .container {
-  background: white;
+  background: var(--card-bg);
   padding: 2rem;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
   margin-bottom: 1.5rem;
   text-align: center;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 
 .title {
   margin: 0 0 1rem 0;
   font-size: 1.25rem;
-  color: #333;
+  color: var(--text-primary);
+  transition: color 0.3s ease;
 }
 
 .balance {
@@ -21,19 +23,19 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  transition: color 0.3s;
+  transition: color 0.3s ease;
 }
 
 .positive {
-  color: #27ae60;
+  color: var(--accent-success);
 }
 
 .negative {
-  color: #e74c3c;
+  color: var(--accent-danger);
 }
 
 .zero {
-  color: #95a5a6;
+  color: var(--text-disabled);
 }
 
 .sign {
@@ -52,8 +54,9 @@
 .status {
   margin: 1rem 0 0 0;
   font-size: 1rem;
-  color: #666;
+  color: var(--text-secondary);
   font-weight: 500;
+  transition: color 0.3s ease;
 }
 
 @media (max-width: 600px) {

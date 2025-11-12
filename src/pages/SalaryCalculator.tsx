@@ -5,6 +5,7 @@ import { SalaryInput } from '../components/SalaryInput';
 import { DailyInput } from '../components/DailyInput';
 import { SalaryResult } from '../components/SalaryResult';
 import { SalaryHistory } from '../components/SalaryHistory';
+import { ThemeToggle } from '../components/ThemeToggle';
 import { calculateSalaryBreakdown } from '../utils/salaryCalculations';
 import { saveSalaryEntry } from '../utils/salaryStorage';
 import { SalaryState, SalaryCalculation } from '../types';
@@ -132,6 +133,9 @@ export const SalaryCalculator: React.FC = () => {
           ← Назад
         </Link>
         <h1 className={styles.title}>Расчет зарплаты</h1>
+        <div className={styles.headerActions}>
+          <ThemeToggle />
+        </div>
       </header>
       <main className={styles.main}>
         <DatePicker
