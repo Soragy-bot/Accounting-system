@@ -1,0 +1,116 @@
+.container {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+}
+
+.title {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.25rem;
+  color: #333;
+}
+
+.emptyMessage {
+  color: #666;
+  font-size: 0.9rem;
+  margin: 0;
+  text-align: center;
+  padding: 2rem;
+}
+
+.daysList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.dayItem {
+  padding: 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background: #f8f9fa;
+}
+
+.dayHeader {
+  margin-bottom: 1rem;
+}
+
+.dateLabel {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #555;
+}
+
+.inputsRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.inputLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #666;
+}
+
+.inputWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #4a90e2;
+}
+
+.input::-webkit-inner-spin-button,
+.input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+.currency {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #666;
+  min-width: 20px;
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .dayItem {
+    padding: 0.75rem;
+  }
+
+  .inputsRow {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+}
+
