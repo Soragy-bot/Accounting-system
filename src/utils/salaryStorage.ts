@@ -14,7 +14,12 @@ export const getHistory = (): SalaryCalculation[] => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (!stored) return [];
-    return JSON.parse(stored);
+    const history = JSON.parse(stored);
+    // Миграция: удаляем поле targetProductBonus из старых записей
+    return history.map((entry: any) => {
+      const { targetProductBonus, ...rest } = entry;
+      return rest;
+    });
   } catch (error) {
     console.error('Ошибка при загрузке истории зарплаты:', error);
     return [];

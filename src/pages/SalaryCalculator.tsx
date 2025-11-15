@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { DatePicker } from '../components/DatePicker';
 import { SalaryInput } from '../components/SalaryInput';
@@ -6,10 +6,14 @@ import { DailyInput } from '../components/DailyInput';
 import { SalaryResult } from '../components/SalaryResult';
 import { SalaryHistory } from '../components/SalaryHistory';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { ModeToggle } from '../components/ModeToggle';
+import { MoyskladSettingsComponent } from '../components/MoyskladSettings';
 import { calculateSalaryBreakdown } from '../utils/salaryCalculations';
 import { saveSalaryEntry } from '../utils/salaryStorage';
 import { exportSalaryToExcel } from '../utils/salaryExport';
-import { SalaryState, SalaryCalculation } from '../types';
+import { getMoyskladSettings, hasMoyskladSettings } from '../utils/moyskladStorage';
+import { calculateSalesByDay, calculateTargetProductsByDay, MoyskladApiError } from '../utils/moyskladApi';
+import { SalaryState, SalaryCalculation, MoyskladSettings } from '../types';
 import styles from './SalaryCalculator.module.css';
 
 export const SalaryCalculator: React.FC = () => {
@@ -18,19 +22,186 @@ export const SalaryCalculator: React.FC = () => {
     workDays: [],
     salesPercentage: 0,
     salesByDay: {},
-    targetProductBonus: 0,
     targetProductsCount: {},
+    mode: 'manual',
   });
   const [historyRefreshTrigger, setHistoryRefreshTrigger] = useState(0);
+  const [moyskladSettings, setMoyskladSettings] = useState<MoyskladSettings | null>(null);
+  const [loadingDays, setLoadingDays] = useState<string[]>([]);
+  const [errorDays, setErrorDays] = useState<{ [date: string]: string }>({});
+  const [dataSource, setDataSource] = useState<{ [date: string]: 'manual' | 'api' }>({});
+  const loadedDaysRef = useRef<Set<string>>(new Set());
 
   const breakdown = useMemo(() => {
     return calculateSalaryBreakdown(state);
   }, [state]);
 
+  // Загрузка настроек API при монтировании
+  useEffect(() => {
+    if (hasMoyskladSettings()) {
+      const settings = getMoyskladSettings();
+      if (settings) {
+        setMoyskladSettings(settings);
+      }
+    }
+  }, []);
+
+  // Обработка изменения настроек API
+  const handleSettingsChange = useCallback((settings: MoyskladSettings | null) => {
+    setMoyskladSettings(settings);
+    // Если настройки изменились, сбрасываем данные источников
+    setDataSource({});
+  }, []);
+
+  // Обработка изменения режима
+  const handleModeChange = useCallback((mode: 'manual' | 'api') => {
+    setState((prev) => ({ ...prev, mode }));
+    
+    // Если переключились в режим API, загружаем настройки
+    if (mode === 'api' && hasMoyskladSettings()) {
+      const settings = getMoyskladSettings();
+      if (settings) {
+        setMoyskladSettings(settings);
+      }
+    }
+    
+    // Если переключились в ручной режим, очищаем данные источников
+    if (mode === 'manual') {
+      setDataSource({});
+      setErrorDays({});
+      setLoadingDays([]);
+      loadedDaysRef.current.clear();
+    }
+  }, []);
+
+  // Загрузка данных из API для выбранных дней
+  const loadDataFromAPI = useCallback(async (dates: string[]) => {
+    if (!moyskladSettings || !moyskladSettings.accessToken || !moyskladSettings.storeId) {
+      return;
+    }
+
+    // Добавляем дни в список загрузки
+    setLoadingDays((prev) => {
+      const newLoadingDays = [...prev];
+      dates.forEach(date => {
+        if (!newLoadingDays.includes(date)) {
+          newLoadingDays.push(date);
+        }
+      });
+      return newLoadingDays;
+    });
+
+      // Очищаем ошибки для загружаемых дней
+      setErrorDays((prev) => {
+        const newErrors = { ...prev };
+        dates.forEach(date => {
+          delete newErrors[date];
+        });
+        return newErrors;
+      });
+
+    const newSalesByDay = { ...state.salesByDay };
+    const newTargetProductsCount = { ...state.targetProductsCount };
+    const newDataSource = { ...dataSource };
+    const newErrors: { [date: string]: string } = {};
+
+    try {
+      // Загружаем данные для каждого дня
+      for (const date of dates) {
+        try {
+          // Подсчитываем продажи
+          const sales = await calculateSalesByDay(
+            moyskladSettings.accessToken,
+            date,
+            moyskladSettings.storeId
+          );
+
+          // Подсчитываем целевые продукты
+          const targetProducts = await calculateTargetProductsByDay(
+            moyskladSettings.accessToken,
+            date,
+            moyskladSettings
+          );
+
+          newSalesByDay[date] = sales.total / 100; // Конвертируем из копеек в рубли
+          newTargetProductsCount[date] = targetProducts;
+          newDataSource[date] = 'api';
+          // Отмечаем день как успешно загруженный
+          loadedDaysRef.current.add(date);
+        } catch (error) {
+          console.error(`Ошибка при загрузке данных за ${date}:`, error);
+          if (error instanceof MoyskladApiError) {
+            newErrors[date] = error.message;
+          } else {
+            newErrors[date] = 'Не удалось загрузить данные';
+          }
+          // Оставляем старые значения, если они есть, или устанавливаем 0
+          if (!(date in newSalesByDay)) {
+            newSalesByDay[date] = 0;
+          }
+          if (!(date in newTargetProductsCount)) {
+            newTargetProductsCount[date] = 0;
+          }
+          // Удаляем из ref при ошибке, чтобы можно было повторить загрузку
+          loadedDaysRef.current.delete(date);
+        }
+      }
+
+      setState((prev) => ({
+        ...prev,
+        salesByDay: newSalesByDay,
+        targetProductsCount: newTargetProductsCount,
+      }));
+      setDataSource(newDataSource);
+      setErrorDays((prev) => ({ ...prev, ...newErrors }));
+    } catch (error) {
+      console.error('Ошибка при загрузке данных из API:', error);
+    } finally {
+      // Удаляем дни из списка загрузки
+      setLoadingDays((prev) => prev.filter(date => !dates.includes(date)));
+    }
+  }, [moyskladSettings, state.salesByDay, state.targetProductsCount, dataSource]);
+
+  // Автоматическая загрузка данных при выборе дней в режиме API
+  useEffect(() => {
+    if (state.mode === 'api' && state.workDays.length > 0 && moyskladSettings) {
+      // Проверяем, что все настройки заполнены
+      if (!moyskladSettings.storeId) {
+        return;
+      }
+
+      // Загружаем данные только для дней, которые еще не загружены из API
+      // И которые не находятся в процессе загрузки
+      // Если день был перевыбран (есть в workDays, но нет в loadedDaysRef), перезагружаем его
+      const daysToLoad = state.workDays.filter(
+        date => {
+          const isLoaded = loadedDaysRef.current.has(date);
+          const isLoading = loadingDays.includes(date);
+          // Если день не загружен и не загружается, загружаем его
+          // Также загружаем, если день есть в workDays, но нет в loadedDaysRef (перевыбран)
+          return !isLoaded && !isLoading;
+        }
+      );
+      
+      if (daysToLoad.length > 0) {
+        loadDataFromAPI(daysToLoad);
+      }
+    }
+    // Отключаем предупреждение о зависимостях, так как мы хотим контролировать когда загружать данные
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.mode, state.workDays, moyskladSettings?.storeId]);
+
   const handleWorkDaysChange = useCallback((workDays: string[]) => {
     setState((prev) => {
       const newSalesByDay = { ...prev.salesByDay };
       const newTargetProductsCount = { ...prev.targetProductsCount };
+      const newDataSource = { ...dataSource };
+      const newErrorDays = { ...errorDays };
+
+      // Определяем дни, которые были удалены
+      const removedDates = prev.workDays.filter(date => !workDays.includes(date));
+      // Определяем дни, которые были добавлены (новые или перевыбранные)
+      const addedDates = workDays.filter(date => !prev.workDays.includes(date));
 
       // Удаляем данные для дней, которые больше не выбраны
       Object.keys(newSalesByDay).forEach((date) => {
@@ -45,6 +216,32 @@ export const SalaryCalculator: React.FC = () => {
         }
       });
 
+      Object.keys(newDataSource).forEach((date) => {
+        if (!workDays.includes(date)) {
+          delete newDataSource[date];
+          loadedDaysRef.current.delete(date);
+        }
+      });
+
+      // Для дней, которые были добавлены (включая перевыбранные), 
+      // очищаем их из loadedDaysRef и dataSource, чтобы они перезагрузились из API
+      // если режим API активен
+      addedDates.forEach((date) => {
+        // Очищаем день из loadedDaysRef, чтобы он перезагрузился при следующем useEffect
+        loadedDaysRef.current.delete(date);
+        // Очищаем dataSource для добавленного дня, чтобы он перезагрузился
+        delete newDataSource[date];
+      });
+
+      Object.keys(newErrorDays).forEach((date) => {
+        if (!workDays.includes(date)) {
+          delete newErrorDays[date];
+        }
+      });
+
+      setDataSource(newDataSource);
+      setErrorDays(newErrorDays);
+
       return {
         ...prev,
         workDays,
@@ -52,7 +249,7 @@ export const SalaryCalculator: React.FC = () => {
         targetProductsCount: newTargetProductsCount,
       };
     });
-  }, []);
+  }, [dataSource, errorDays]);
 
   const handleDailyRateChange = useCallback((dailyRate: number) => {
     setState((prev) => ({ ...prev, dailyRate }));
@@ -70,11 +267,12 @@ export const SalaryCalculator: React.FC = () => {
         [date]: value,
       },
     }));
-  }, []);
+    // При ручном изменении отмечаем источник как manual
+    if (state.mode === 'api') {
+      setDataSource((prev) => ({ ...prev, [date]: 'manual' }));
+    }
+  }, [state.mode]);
 
-  const handleTargetProductBonusChange = useCallback((targetProductBonus: number) => {
-    setState((prev) => ({ ...prev, targetProductBonus }));
-  }, []);
 
   const handleTargetProductsCountChange = useCallback((date: string, value: number) => {
     setState((prev) => ({
@@ -84,7 +282,11 @@ export const SalaryCalculator: React.FC = () => {
         [date]: value,
       },
     }));
-  }, []);
+    // При ручном изменении отмечаем источник как manual
+    if (state.mode === 'api') {
+      setDataSource((prev) => ({ ...prev, [date]: 'manual' }));
+    }
+  }, [state.mode]);
 
   const handleSave = useCallback(() => {
     const entry: SalaryCalculation = {
@@ -94,7 +296,6 @@ export const SalaryCalculator: React.FC = () => {
       workDays: state.workDays,
       salesPercentage: state.salesPercentage,
       salesByDay: { ...state.salesByDay },
-      targetProductBonus: state.targetProductBonus,
       targetProductsCount: { ...state.targetProductsCount },
       totalSalary: breakdown.totalSalary,
     };
@@ -104,26 +305,35 @@ export const SalaryCalculator: React.FC = () => {
   }, [state, breakdown]);
 
   const handleLoadEntry = useCallback((entry: SalaryCalculation) => {
+    // Игнорируем поле targetProductBonus, если оно есть в старых записях
     setState({
       dailyRate: entry.dailyRate,
       workDays: entry.workDays,
       salesPercentage: entry.salesPercentage,
       salesByDay: entry.salesByDay,
-      targetProductBonus: entry.targetProductBonus,
       targetProductsCount: entry.targetProductsCount,
+      mode: state.mode || 'manual',
     });
-  }, []);
+    // При загрузке записи сбрасываем источники данных
+    setDataSource({});
+    setErrorDays({});
+    loadedDaysRef.current.clear();
+  }, [state.mode]);
 
   const handleReset = useCallback(() => {
     if (window.confirm('Вы уверены, что хотите сбросить все данные?')) {
-      setState({
+      setState((prev) => ({
         dailyRate: 0,
         workDays: [],
         salesPercentage: 0,
         salesByDay: {},
-        targetProductBonus: 0,
         targetProductsCount: {},
-      });
+        mode: prev.mode || 'manual',
+      }));
+      setDataSource({});
+      setErrorDays({});
+      setLoadingDays([]);
+      loadedDaysRef.current.clear();
     }
   }, []);
 
@@ -152,6 +362,15 @@ export const SalaryCalculator: React.FC = () => {
         </div>
       </header>
       <main className={styles.main}>
+        <ModeToggle
+          mode={state.mode || 'manual'}
+          onModeChange={handleModeChange}
+        />
+
+        {state.mode === 'api' && (
+          <MoyskladSettingsComponent onSettingsChange={handleSettingsChange} />
+        )}
+
         <DatePicker
           selectedDates={state.workDays}
           onDatesChange={handleWorkDaysChange}
@@ -160,10 +379,8 @@ export const SalaryCalculator: React.FC = () => {
         <SalaryInput
           dailyRate={state.dailyRate}
           salesPercentage={state.salesPercentage}
-          targetProductBonus={state.targetProductBonus}
           onDailyRateChange={handleDailyRateChange}
           onSalesPercentageChange={handleSalesPercentageChange}
-          onTargetProductBonusChange={handleTargetProductBonusChange}
         />
 
         <DailyInput
@@ -172,6 +389,10 @@ export const SalaryCalculator: React.FC = () => {
           targetProductsCount={state.targetProductsCount}
           onSalesChange={handleSalesChange}
           onTargetProductsCountChange={handleTargetProductsCountChange}
+          mode={state.mode}
+          loadingDays={loadingDays}
+          errorDays={errorDays}
+          dataSource={dataSource}
         />
 
         {state.workDays.length > 0 && (

@@ -38,6 +38,9 @@
 }
 
 .dayHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 1rem;
 }
 
@@ -46,6 +49,46 @@
   font-weight: 600;
   color: var(--text-secondary);
   transition: color 0.3s ease;
+}
+
+.dataSource {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(91, 163, 245, 0.1);
+  color: var(--accent-primary);
+  border: 1px solid rgba(91, 163, 245, 0.3);
+}
+
+.dataSourceManual {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(146, 146, 146, 0.1);
+  color: var(--text-tertiary);
+  border: 1px solid rgba(146, 146, 146, 0.3);
+}
+
+.loading {
+  padding: 1rem;
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.error {
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  border-radius: 4px;
+  background: rgba(231, 76, 60, 0.1);
+  color: var(--accent-danger);
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  font-size: 0.85rem;
 }
 
 .inputsRow {
@@ -88,6 +131,11 @@
 .input:focus {
   outline: none;
   border-color: var(--input-border-focus);
+}
+
+.input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .input::-webkit-inner-spin-button,

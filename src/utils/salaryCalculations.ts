@@ -1,7 +1,9 @@
 import { SalaryState } from '../types';
 
+const TARGET_PRODUCT_BONUS = 50; // Константа бонуса за целевой товар
+
 export const calculateSalary = (state: SalaryState): number => {
-  const { dailyRate, workDays, salesPercentage, salesByDay, targetProductBonus, targetProductsCount } = state;
+  const { dailyRate, workDays, salesPercentage, salesByDay, targetProductsCount } = state;
 
   // 1. Расчет зарплаты по ставке
   const rateSalary = dailyRate * workDays.length;
@@ -17,7 +19,7 @@ export const calculateSalary = (state: SalaryState): number => {
   let targetBonus = 0;
   workDays.forEach((date) => {
     const count = targetProductsCount[date] || 0;
-    targetBonus += count * targetProductBonus;
+    targetBonus += count * TARGET_PRODUCT_BONUS;
   });
 
   // 4. Итоговая зарплата
@@ -25,10 +27,10 @@ export const calculateSalary = (state: SalaryState): number => {
 };
 
 export const calculateSalaryBreakdown = (state: SalaryState) => {
-  const { dailyRate, workDays, salesPercentage, salesByDay, targetProductBonus, targetProductsCount } = state;
+  const { dailyRate, workDays, salesPercentage, salesByDay, targetProductsCount } = state;
 
   const rateSalary = dailyRate * workDays.length;
-  
+
   let salesBonus = 0;
   workDays.forEach((date) => {
     const sales = salesByDay[date] || 0;
@@ -38,7 +40,7 @@ export const calculateSalaryBreakdown = (state: SalaryState) => {
   let targetBonus = 0;
   workDays.forEach((date) => {
     const count = targetProductsCount[date] || 0;
-    targetBonus += count * targetProductBonus;
+    targetBonus += count * TARGET_PRODUCT_BONUS;
   });
 
   const totalSalary = rateSalary + salesBonus + targetBonus;

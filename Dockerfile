@@ -28,20 +28,32 @@ ENV NODE_ENV=production
 RUN npm run build
 
 # =========================================
-# Stage 2: Prepare Nginx to Serve Static Files
+# Stage 2: Serve with Express Proxy Server
 # =========================================
 
-FROM nginx:alpine AS runner
+FROM node:${NODE_VERSION} AS runner
 
-# Copy custom Nginx config
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Set the working directory
+WORKDIR /app
 
-# Copy the static build output from the build stage to Nginx's default HTML serving directory
-COPY --from=builder /app/dist /usr/share/nginx/html
+# Copy package files
+COPY package.json package-lock.json* ./
 
-# Expose port 80 to allow HTTP traffic
-EXPOSE 80
+# Install production dependencies only
+RUN npm ci --only=production --no-audit || npm install --only=production --no-audit
 
-# Start Nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Copy the static build output from the build stage
+COPY --from=builder /app/dist ./dist
+
+# Copy server file
+COPY server.js ./
+
+# Expose port 8880 to allow HTTP traffic
+EXPOSE 8880
+
+# Set environment variable for port
+ENV PORT=8880
+
+# Start Express server
+CMD ["node", "server.js"]
 

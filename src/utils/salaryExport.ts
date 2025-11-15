@@ -4,6 +4,8 @@ import { calculateSalaryBreakdown } from './salaryCalculations';
 
 type SalaryBreakdown = ReturnType<typeof calculateSalaryBreakdown>;
 
+const TARGET_PRODUCT_BONUS = 50; // Константа бонуса за целевой товар
+
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
   return date.toLocaleDateString('ru-RU', {
@@ -143,7 +145,7 @@ export const exportSalaryToExcel = (
     ['Параметры расчета', ''],
     ['Ставка за день', `${state.dailyRate.toFixed(2)} ₽`],
     ['Процент с продаж', `${state.salesPercentage}%`],
-    ['Бонус за целевой товар', `${state.targetProductBonus.toFixed(2)} ₽`],
+    ['Бонус за целевой товар', `${TARGET_PRODUCT_BONUS.toFixed(2)} ₽`],
     ['Количество рабочих дней', breakdown.workDaysCount],
     ['', ''],
     ['Итоги', ''],
@@ -211,7 +213,7 @@ export const exportSalaryToExcel = (
       const sales = state.salesByDay[date] || 0;
       const salesBonus = sales * (state.salesPercentage / 100);
       const targetCount = state.targetProductsCount[date] || 0;
-      const targetBonus = targetCount * state.targetProductBonus;
+      const targetBonus = targetCount * TARGET_PRODUCT_BONUS;
       const dayTotal = state.dailyRate + salesBonus + targetBonus;
 
       dailyData.push([
