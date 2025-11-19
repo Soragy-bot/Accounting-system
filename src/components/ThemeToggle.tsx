@@ -6,40 +6,23 @@ export const ThemeToggle: React.FC = () => {
   const { themeMode, setThemeMode } = useTheme();
 
   const handleToggle = () => {
-    if (themeMode === 'light') {
-      setThemeMode('dark');
-    } else if (themeMode === 'dark') {
-      setThemeMode('system');
-    } else {
-      setThemeMode('light');
-    }
+    // Переключаем между светлой и тёмной темой
+    setThemeMode(themeMode === 'light' ? 'dark' : 'light');
   };
 
   const getIcon = () => {
-    if (themeMode === 'light') {
-      return '☀️';
-    } else if (themeMode === 'dark') {
-      return '🌙';
-    } else {
-      return '💻';
-    }
+    return themeMode === 'light' ? '☀️' : '🌙';
   };
 
   const getLabel = () => {
-    if (themeMode === 'light') {
-      return 'Светлая';
-    } else if (themeMode === 'dark') {
-      return 'Тёмная';
-    } else {
-      return 'Системная';
-    }
+    return themeMode === 'light' ? 'Светлая' : 'Тёмная';
   };
 
   return (
     <button
       className={styles.toggleButton}
       onClick={handleToggle}
-      aria-label={`Тема: ${getLabel()}`}
+      aria-label={`Тема: ${getLabel()}. Нажмите для переключения`}
       title={`Текущая тема: ${getLabel()}. Нажмите для переключения`}
     >
       <span className={styles.icon}>{getIcon()}</span>

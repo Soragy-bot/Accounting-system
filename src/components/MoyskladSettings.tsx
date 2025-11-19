@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { MoyskladSettings, Store } from '../types';
 import { getMoyskladSettings, saveMoyskladSettings, getDefaultMoyskladSettings } from '../utils/moyskladStorage';
 import { getStores, testConnection, MoyskladApiError } from '../utils/moyskladApi';
+import { logger } from '../utils/logger';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import styles from './MoyskladSettings.module.css';
 
@@ -40,7 +41,7 @@ export const MoyskladSettingsComponent: React.FC<MoyskladSettingsProps> = ({ onS
             const storesList = await getStores(token);
             setStores(storesList);
         } catch (err) {
-            console.error('Ошибка при загрузке точек продажи:', err);
+            logger.error('Ошибка при загрузке точек продажи:', err);
             if (err instanceof MoyskladApiError) {
                 setError(err.message);
             } else {
@@ -99,7 +100,7 @@ export const MoyskladSettingsComponent: React.FC<MoyskladSettingsProps> = ({ onS
                 setConnectionStatus('error');
             }
         } catch (err) {
-            console.error('Ошибка при тесте подключения:', err);
+            logger.error('Ошибка при тесте подключения:', err);
             if (err instanceof MoyskladApiError) {
                 setError(err.message);
             } else {
@@ -129,7 +130,7 @@ export const MoyskladSettingsComponent: React.FC<MoyskladSettingsProps> = ({ onS
             setError(null);
             onSettingsChange(settings);
         } catch (err) {
-            console.error('Ошибка при сохранении настроек:', err);
+            logger.error('Ошибка при сохранении настроек:', err);
             setError('Не удалось сохранить настройки');
         }
     }, [settings, onSettingsChange]);

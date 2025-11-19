@@ -1,33 +1,35 @@
 import { CashEntry } from '../types';
+import { getJsonItem, setJsonItem, safeRemoveItem } from './localStorage';
+import { HISTORY_LIMIT } from '../constants';
+import { logger } from './logger';
 
 const STORAGE_KEY = 'cash-counter-history';
 
 export const saveHistoryEntry = (entry: CashEntry): void => {
   const history = getHistory();
   history.unshift(entry);
-  // Сохраняем только последние 50 записей
-  const limitedHistory = history.slice(0, 50);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(limitedHistory));
+  // Сохраняем только последние записи согласно лимиту
+  const limitedHistory = history.slice(0, HISTORY_LIMIT);
+  setJsonItem(STORAGE_KEY, limitedHistory);
 };
 
 export const getHistory = (): CashEntry[] => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return [];
-    return JSON.parse(stored);
-  } catch (error) {
-    console.error('Ошибка при загрузке истории:', error);
+  const history = getJsonItem<CashEntry[]>(STORAGE_KEY, []);
+  // Валидация структуры данных
+  if (!Array.isArray(history)) {
+    logger.warn('История кассы имеет неверный формат, возвращаем пустой массив');
     return [];
   }
+  return history;
 };
 
 export const clearHistory = (): void => {
-  localStorage.removeItem(STORAGE_KEY);
+  safeRemoveItem(STORAGE_KEY);
 };
 
 export const deleteHistoryEntry = (id: string): void => {
   const history = getHistory();
   const filteredHistory = history.filter((entry) => entry.id !== id);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(filteredHistory));
+  setJsonItem(STORAGE_KEY, filteredHistory);
 };
 

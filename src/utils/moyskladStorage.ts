@@ -1,28 +1,23 @@
 import { MoyskladSettings } from '../types';
+import { getJsonItem, setJsonItem, safeRemoveItem } from './localStorage';
 
 const STORAGE_KEY = 'moysklad-settings';
 
 export const saveMoyskladSettings = (settings: MoyskladSettings): void => {
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-    } catch (error) {
-        console.error('Ошибка при сохранении настроек МойСклад:', error);
-    }
+    setJsonItem(STORAGE_KEY, settings);
 };
 
 export const getMoyskladSettings = (): MoyskladSettings | null => {
-    try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (!stored) return null;
-        return JSON.parse(stored);
-    } catch (error) {
-        console.error('Ошибка при загрузке настроек МойСклад:', error);
-        return null;
+    const settings = getJsonItem<MoyskladSettings>(STORAGE_KEY, null);
+    // Валидация структуры данных
+    if (settings !== null && typeof settings === 'object' && 'accessToken' in settings) {
+        return settings;
     }
+    return null;
 };
 
 export const clearMoyskladSettings = (): void => {
-    localStorage.removeItem(STORAGE_KEY);
+    safeRemoveItem(STORAGE_KEY);
 };
 
 export const hasMoyskladSettings = (): boolean => {

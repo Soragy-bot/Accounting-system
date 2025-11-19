@@ -64,76 +64,6 @@
   margin: 0 auto;
 }
 
-.actions {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-}
-
-.saveButton,
-.exportButton,
-.resetButton {
-  flex: 1;
-  min-width: 150px;
-  padding: 1rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s, background 0.3s ease, opacity 0.2s;
-  color: white;
-}
-
-.saveButton {
-  background: var(--accent-success);
-  color: white;
-}
-
-.saveButton:hover:not(:disabled) {
-  background: var(--accent-success-hover);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.saveButton:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.exportButton {
-  background: var(--accent-primary, #4a90e2);
-  color: white;
-}
-
-.exportButton:hover:not(:disabled) {
-  background: var(--accent-primary-hover, #357abd);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.exportButton:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.resetButton {
-  background: var(--accent-danger);
-  color: white;
-}
-
-.resetButton:hover {
-  background: var(--accent-danger-hover);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.saveButton:active:not(:disabled),
-.exportButton:active:not(:disabled),
-.resetButton:active {
-  transform: translateY(0);
-}
 
 @media (max-width: 600px) {
   .title {
@@ -164,16 +94,6 @@
   .title {
     order: -1;
     margin-bottom: 1rem;
-  }
-
-  .actions {
-    flex-direction: column;
-  }
-
-  .saveButton,
-  .exportButton,
-  .resetButton {
-    width: 100%;
   }
 }
 

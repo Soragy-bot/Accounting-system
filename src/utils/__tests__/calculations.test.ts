@@ -1,5 +1,4 @@
 import { calculateTotal } from '../calculations';
-import { BILLS, COINS_RUBLES, COINS_KOPECKS } from '../../constants';
 
 describe('calculateTotal', () => {
   it('должен возвращать 0, когда начальная сумма равна фактической сумме', () => {

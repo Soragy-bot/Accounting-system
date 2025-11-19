@@ -5,6 +5,7 @@ import { SalaryInput } from '../components/SalaryInput';
 import { DailyInput } from '../components/DailyInput';
 import { SalaryResult } from '../components/SalaryResult';
 import { SalaryHistory } from '../components/SalaryHistory';
+import { SalaryActions } from '../components/SalaryActions';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { ModeToggle } from '../components/ModeToggle';
 import { MoyskladSettingsComponent } from '../components/MoyskladSettings';
@@ -15,6 +16,7 @@ import { exportSalaryToExcel } from '../utils/salaryExport';
 import { getMoyskladSettings, hasMoyskladSettings } from '../utils/moyskladStorage';
 import { calculateSalesByDay, calculateTargetProductsByDay, MoyskladApiError } from '../utils/moyskladApi';
 import { SalaryState, SalaryCalculation, MoyskladSettings } from '../types';
+import { logger } from '../utils/logger';
 import styles from './SalaryCalculator.module.css';
 
 export const SalaryCalculator: React.FC = () => {
@@ -76,7 +78,7 @@ export const SalaryCalculator: React.FC = () => {
     }
   }, []);
 
-  // Форматирование даты для отображения
+  // Форматирование даты для отображения (мемоизировано)
   const formatDate = useCallback((dateStr: string): string => {
     const date = new Date(dateStr + 'T00:00:00');
     return date.toLocaleDateString('ru-RU', {
@@ -85,6 +87,20 @@ export const SalaryCalculator: React.FC = () => {
       year: 'numeric',
     });
   }, []);
+
+  // Мемоизация списка дней для загрузки
+  const daysToLoadMemo = useMemo(() => {
+    if (state.mode !== 'api' || state.workDays.length === 0 || !moyskladSettings?.storeId) {
+      return [];
+    }
+    return state.workDays.filter(
+      date => {
+        const isLoaded = loadedDaysRef.current.has(date);
+        const isLoading = loadingDays.includes(date);
+        return !isLoaded && !isLoading;
+      }
+    );
+  }, [state.mode, state.workDays, moyskladSettings?.storeId, loadingDays]);
 
   // Загрузка данных из API для выбранных дней
   const loadDataFromAPI = useCallback(async (dates: string[]) => {
@@ -141,7 +157,7 @@ export const SalaryCalculator: React.FC = () => {
           // Отмечаем день как успешно загруженный
           loadedDaysRef.current.add(date);
         } catch (error) {
-          console.error(`Ошибка при загрузке данных за ${date}:`, error);
+          logger.error(`Ошибка при загрузке данных за ${date}:`, error);
           let errorMessage = 'Не удалось загрузить данные';
           if (error instanceof MoyskladApiError) {
             errorMessage = error.message;
@@ -171,7 +187,7 @@ export const SalaryCalculator: React.FC = () => {
       setDataSource(newDataSource);
       setErrorDays((prev) => ({ ...prev, ...newErrors }));
     } catch (error) {
-      console.error('Ошибка при загрузке данных из API:', error);
+      logger.error('Ошибка при загрузке данных из API:', error);
       if (error instanceof MoyskladApiError) {
         showError(`Ошибка API: ${error.message}`);
       } else {
@@ -191,26 +207,12 @@ export const SalaryCalculator: React.FC = () => {
         return;
       }
 
-      // Загружаем данные только для дней, которые еще не загружены из API
-      // И которые не находятся в процессе загрузки
-      // Если день был перевыбран (есть в workDays, но нет в loadedDaysRef), перезагружаем его
-      const daysToLoad = state.workDays.filter(
-        date => {
-          const isLoaded = loadedDaysRef.current.has(date);
-          const isLoading = loadingDays.includes(date);
-          // Если день не загружен и не загружается, загружаем его
-          // Также загружаем, если день есть в workDays, но нет в loadedDaysRef (перевыбран)
-          return !isLoaded && !isLoading;
-        }
-      );
-      
-      if (daysToLoad.length > 0) {
-        loadDataFromAPI(daysToLoad);
+      // Используем мемоизированный список дней для загрузки
+      if (daysToLoadMemo.length > 0) {
+        loadDataFromAPI(daysToLoadMemo);
       }
     }
-    // Отключаем предупреждение о зависимостях, так как мы хотим контролировать когда загружать данные
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.mode, state.workDays, moyskladSettings?.storeId, loadDataFromAPI]);
+  }, [daysToLoadMemo, loadDataFromAPI]);
 
   const handleWorkDaysChange = useCallback((workDays: string[]) => {
     setState((prev) => {
@@ -219,8 +221,6 @@ export const SalaryCalculator: React.FC = () => {
       const newDataSource = { ...dataSource };
       const newErrorDays = { ...errorDays };
 
-      // Определяем дни, которые были удалены
-      const removedDates = prev.workDays.filter(date => !workDays.includes(date));
       // Определяем дни, которые были добавлены (новые или перевыбранные)
       const addedDates = workDays.filter(date => !prev.workDays.includes(date));
 
@@ -367,7 +367,7 @@ export const SalaryCalculator: React.FC = () => {
       exportSalaryToExcel(state, breakdown);
       showSuccess('Данные успешно экспортированы в Excel!');
     } catch (error) {
-      console.error('Ошибка при экспорте в Excel:', error);
+      logger.error('Ошибка при экспорте в Excel:', error);
       showError('Произошла ошибка при экспорте в Excel.');
     }
   }, [state, breakdown, showSuccess, showError]);
@@ -427,17 +427,13 @@ export const SalaryCalculator: React.FC = () => {
           />
         )}
 
-        <div className={styles.actions}>
-          <button onClick={handleSave} className={styles.saveButton} disabled={state.workDays.length === 0}>
-            Сохранить расчет
-          </button>
-          <button onClick={handleExportToExcel} className={styles.exportButton} disabled={state.workDays.length === 0}>
-            Экспорт в Excel
-          </button>
-          <button onClick={handleReset} className={styles.resetButton}>
-            Сбросить
-          </button>
-        </div>
+        <SalaryActions
+          onSave={handleSave}
+          onExport={handleExportToExcel}
+          onReset={handleReset}
+          canSave={state.workDays.length > 0}
+          canExport={state.workDays.length > 0}
+        />
 
         <SalaryHistory onLoadEntry={handleLoadEntry} refreshTrigger={historyRefreshTrigger} />
       </main>

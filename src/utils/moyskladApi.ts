@@ -22,6 +22,9 @@ export class MoyskladApiError extends Error {
     }
 }
 
+import { API_RETRY_ATTEMPTS, API_RETRY_DELAY_BASE, API_RETRY_DELAY_MAX } from '../constants';
+import { logger } from './logger';
+
 // Retry-логика для сетевых ошибок
 const sleep = (ms: number): Promise<void> => {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -43,7 +46,7 @@ const fetchApi = async <T>(
     endpoint: string,
     accessToken: string,
     options: RequestInit = {},
-    retries: number = 3
+    retries: number = API_RETRY_ATTEMPTS
 ): Promise<T> => {
     // Используем прокси-сервер для обхода CORS
     const url = `${API_BASE_URL}${endpoint}`;
@@ -87,7 +90,8 @@ const fetchApi = async <T>(
                 if (response.status === 429) {
                     // Для ошибки лимита запросов делаем retry с экспоненциальной задержкой
                     if (attempt < retries) {
-                        const delay = Math.min(1000 * Math.pow(2, attempt), 10000); // Максимум 10 секунд
+                        const delay = Math.min(API_RETRY_DELAY_BASE * Math.pow(2, attempt), API_RETRY_DELAY_MAX);
+                        logger.warn(`Превышен лимит запросов, повтор через ${delay}мс (попытка ${attempt + 1}/${retries + 1})`);
                         await sleep(delay);
                         continue;
                     }
@@ -115,7 +119,8 @@ const fetchApi = async <T>(
 
             // Если это retryable ошибка и есть еще попытки, повторяем
             if (isRetryableError(error) && attempt < retries) {
-                const delay = Math.min(1000 * Math.pow(2, attempt), 10000); // Экспоненциальная задержка, максимум 10 секунд
+                const delay = Math.min(API_RETRY_DELAY_BASE * Math.pow(2, attempt), API_RETRY_DELAY_MAX);
+                logger.warn(`Сетевая ошибка, повтор через ${delay}мс (попытка ${attempt + 1}/${retries + 1}):`, error);
                 await sleep(delay);
                 continue;
             }
@@ -147,7 +152,7 @@ export const getStores = async (accessToken: string): Promise<Store[]> => {
         );
         return response.rows || [];
     } catch (error) {
-        console.error('Ошибка при получении розничных точек продажи:', error);
+        logger.error('Ошибка при получении розничных точек продажи:', error);
         throw error;
     }
 };
@@ -161,7 +166,7 @@ export const getProductFolders = async (accessToken: string): Promise<ProductFol
         );
         return response.rows || [];
     } catch (error) {
-        console.error('Ошибка при получении групп товаров:', error);
+        logger.error('Ошибка при получении групп товаров:', error);
         throw error;
     }
 };
@@ -190,7 +195,7 @@ export const getDemandsByDate = async (
         );
         return response.rows || [];
     } catch (error) {
-        console.error('Ошибка при получении розничных продаж:', error);
+        logger.error('Ошибка при получении розничных продаж:', error);
         throw error;
     }
 };
@@ -214,7 +219,7 @@ export const getDemandPositions = async (
         );
         return response.rows || [];
     } catch (error) {
-        console.error('Ошибка при получении позиций розничной продажи:', error);
+        logger.error('Ошибка при получении позиций розничной продажи:', error);
         throw error;
     }
 };
@@ -270,7 +275,7 @@ export const getProduct = async (
         if (error instanceof MoyskladApiError) {
             throw error;
         }
-        console.error('Ошибка при получении товара:', error);
+        logger.error('Ошибка при получении товара:', error);
         throw error;
     }
 };
@@ -319,7 +324,7 @@ const getProductFromPosition = async (
                 const productHref = assortment.meta.href;
                 return await getProduct(accessToken, productHref);
             } catch (error) {
-                console.warn('Не удалось получить товар для позиции:', position.id, error);
+                logger.warn('Не удалось получить товар для позиции:', { positionId: position.id, error });
                 return null;
             }
         }
@@ -345,7 +350,7 @@ export const calculateSalesByDay = async (
             getDemandPositions(accessToken, demand.id, true)
                 .then(positions => ({ demand, positions }))
                 .catch(error => {
-                    console.warn('Не удалось получить позиции для отгрузки:', demand.id, error);
+                    logger.warn('Не удалось получить позиции для отгрузки:', { demandId: demand.id, error });
                     return { demand, positions: [], error };
                 })
         );
@@ -356,13 +361,15 @@ export const calculateSalesByDay = async (
         let validDemandsCount = 0;
 
         // Обрабатываем каждую отгрузку с позициями
-        for (const { demand, positions, error } of demandsWithPositions) {
-            if (error) {
+        for (const item of demandsWithPositions) {
+            if ('error' in item) {
                 // Если не удалось получить позиции, учитываем всю сумму отгрузки (на случай ошибки API)
-                total += demand.sum || 0;
+                total += item.demand.sum || 0;
                 validDemandsCount++;
                 continue;
             }
+            
+            const { demand, positions } = item;
 
             // Начинаем с общей суммы отгрузки (demand.sum включает все позиции с учетом скидок/налогов)
             let demandTotal = demand.sum || 0;
@@ -435,7 +442,7 @@ export const calculateSalesByDay = async (
 
         return { count: validDemandsCount, total };
     } catch (error) {
-        console.error('Ошибка при подсчете розничных продаж:', error);
+        logger.error('Ошибка при подсчете розничных продаж:', error);
         throw error;
     }
 };
@@ -459,7 +466,7 @@ export const calculateTargetProductsByDay = async (
             getDemandPositions(accessToken, demand.id, true)
                 .then(positions => ({ demand, positions }))
                 .catch(error => {
-                    console.warn('Не удалось получить позиции для розничной продажи:', demand.id, error);
+                    logger.warn('Не удалось получить позиции для розничной продажи:', { demandId: demand.id, error });
                     return { demand, positions: [] };
                 })
         );
@@ -525,7 +532,7 @@ export const calculateTargetProductsByDay = async (
 
         return totalQuantity;
     } catch (error) {
-        console.error('Ошибка при подсчете целевых продуктов:', error);
+        logger.error('Ошибка при подсчете целевых продуктов:', error);
         throw error;
     }
 };
@@ -554,7 +561,7 @@ export const testConnection = async (accessToken: string): Promise<boolean> => {
         }
 
         // Для неизвестных ошибок
-        console.error('Ошибка при тесте подключения:', error);
+        logger.error('Ошибка при тесте подключения:', error);
         throw new MoyskladApiError('Не удалось проверить подключение. Проверьте токен и попробуйте снова.');
     }
 };

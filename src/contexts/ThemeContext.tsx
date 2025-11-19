@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { safeGetItem, safeSetItem } from '../utils/localStorage';
 
-export type ThemeMode = 'light' | 'dark' | 'system';
+export type ThemeMode = 'light' | 'dark';
 
 interface ThemeContextType {
   theme: 'light' | 'dark';
@@ -12,65 +13,49 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 const THEME_STORAGE_KEY = 'app-theme-mode';
 
+/**
+ * Определяет системную тему пользователя
+ */
+const getSystemTheme = (): 'light' | 'dark' => {
+  if (typeof window !== 'undefined' && window.matchMedia) {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  return 'light';
+};
+
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  // При инициализации определяем тему: сначала из localStorage, если нет - из системы
   const [themeMode, setThemeModeState] = useState<ThemeMode>(() => {
-    const saved = localStorage.getItem(THEME_STORAGE_KEY);
-    if (saved === 'light' || saved === 'dark' || saved === 'system') {
+    const saved = safeGetItem(THEME_STORAGE_KEY);
+    if (saved === 'light' || saved === 'dark') {
       return saved;
     }
-    return 'system';
+    // Миграция: если было сохранено 'system', определяем системную тему и сохраняем её
+    if (saved === 'system') {
+      const systemTheme = getSystemTheme();
+      safeSetItem(THEME_STORAGE_KEY, systemTheme);
+      return systemTheme;
+    }
+    // Если в localStorage нет сохраненной темы, используем системную и сохраняем её
+    const systemTheme = getSystemTheme();
+    safeSetItem(THEME_STORAGE_KEY, systemTheme);
+    return systemTheme;
   });
 
-  const getSystemTheme = (): 'light' | 'dark' => {
-    if (typeof window !== 'undefined' && window.matchMedia) {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    }
-    return 'light';
-  };
-
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    let initialTheme: 'light' | 'dark';
-    if (themeMode === 'system') {
-      initialTheme = getSystemTheme();
-    } else {
-      initialTheme = themeMode;
-    }
     // Устанавливаем тему сразу при инициализации для предотвращения мигания
     if (typeof document !== 'undefined') {
-      document.documentElement.setAttribute('data-theme', initialTheme);
-      document.body.setAttribute('data-theme', initialTheme);
+      document.documentElement.setAttribute('data-theme', themeMode);
+      document.body.setAttribute('data-theme', themeMode);
     }
-    return initialTheme;
+    return themeMode;
   });
 
   const setThemeMode = (mode: ThemeMode) => {
     setThemeModeState(mode);
-    localStorage.setItem(THEME_STORAGE_KEY, mode);
-    
-    if (mode === 'system') {
-      setTheme(getSystemTheme());
-    } else {
-      setTheme(mode);
-    }
+    setTheme(mode);
+    safeSetItem(THEME_STORAGE_KEY, mode);
   };
-
-  useEffect(() => {
-    const updateTheme = () => {
-      if (themeMode === 'system') {
-        setTheme(getSystemTheme());
-      }
-    };
-
-    if (themeMode === 'system') {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      mediaQuery.addEventListener('change', updateTheme);
-      updateTheme();
-
-      return () => {
-        mediaQuery.removeEventListener('change', updateTheme);
-      };
-    }
-  }, [themeMode]);
 
   useEffect(() => {
     // Устанавливаем тему сразу при монтировании

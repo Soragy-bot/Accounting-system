@@ -10,3 +10,11 @@ export const COINS_KOPECKS = [50, 10, 5, 1] as const;
 // Константа бонуса за целевой товар
 export const TARGET_PRODUCT_BONUS = 50;
 
+// Лимиты для истории операций
+export const HISTORY_LIMIT = 50;
+
+// Настройки для API запросов
+export const API_RETRY_ATTEMPTS = 3;
+export const API_RETRY_DELAY_BASE = 1000; // базовая задержка в миллисекундах
+export const API_RETRY_DELAY_MAX = 10000; // максимальная задержка в миллисекундах
+

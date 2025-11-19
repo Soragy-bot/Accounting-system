@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { InitialAmount } from '../components/InitialAmount';
 import { MoneyInput } from '../components/MoneyInput';
@@ -21,12 +21,15 @@ export const CashCounter: React.FC = () => {
   });
   const [historyRefreshTrigger, setHistoryRefreshTrigger] = useState(0);
 
-  const totalAmount = calculateTotal(
-    state.initialAmount,
-    state.bills,
-    state.coinsRubles,
-    state.coinsKopecks
-  );
+  // Мемоизация вычисления общей суммы
+  const totalAmount = useMemo(() => {
+    return calculateTotal(
+      state.initialAmount,
+      state.bills,
+      state.coinsRubles,
+      state.coinsKopecks
+    );
+  }, [state.initialAmount, state.bills, state.coinsRubles, state.coinsKopecks]);
 
   const handleSetInitialAmount = useCallback((amount: number) => {
     setState((prev) => ({ ...prev, initialAmount: amount }));
