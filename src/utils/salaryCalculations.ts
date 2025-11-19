@@ -1,6 +1,5 @@
 import { SalaryState } from '../types';
-
-const TARGET_PRODUCT_BONUS = 50; // Константа бонуса за целевой товар
+import { TARGET_PRODUCT_BONUS } from '../constants';
 
 export const calculateSalary = (state: SalaryState): number => {
   const { dailyRate, workDays, salesPercentage, salesByDay, targetProductsCount } = state;

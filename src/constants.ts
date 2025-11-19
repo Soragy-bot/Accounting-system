@@ -7,3 +7,6 @@ export const COINS_RUBLES = [25, 10, 5, 2, 1] as const;
 // Номиналы монет в копейках
 export const COINS_KOPECKS = [50, 10, 5, 1] as const;
 
+// Константа бонуса за целевой товар
+export const TARGET_PRODUCT_BONUS = 50;
+

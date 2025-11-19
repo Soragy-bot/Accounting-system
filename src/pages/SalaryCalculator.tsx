@@ -8,6 +8,7 @@ import { SalaryHistory } from '../components/SalaryHistory';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { ModeToggle } from '../components/ModeToggle';
 import { MoyskladSettingsComponent } from '../components/MoyskladSettings';
+import { useNotification } from '../contexts/NotificationContext';
 import { calculateSalaryBreakdown } from '../utils/salaryCalculations';
 import { saveSalaryEntry } from '../utils/salaryStorage';
 import { exportSalaryToExcel } from '../utils/salaryExport';
@@ -17,6 +18,7 @@ import { SalaryState, SalaryCalculation, MoyskladSettings } from '../types';
 import styles from './SalaryCalculator.module.css';
 
 export const SalaryCalculator: React.FC = () => {
+  const { showSuccess, showError } = useNotification();
   const [state, setState] = useState<SalaryState>({
     dailyRate: 0,
     workDays: [],
@@ -72,6 +74,16 @@ export const SalaryCalculator: React.FC = () => {
       setLoadingDays([]);
       loadedDaysRef.current.clear();
     }
+  }, []);
+
+  // Форматирование даты для отображения
+  const formatDate = useCallback((dateStr: string): string => {
+    const date = new Date(dateStr + 'T00:00:00');
+    return date.toLocaleDateString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
   }, []);
 
   // Загрузка данных из API для выбранных дней
@@ -130,11 +142,15 @@ export const SalaryCalculator: React.FC = () => {
           loadedDaysRef.current.add(date);
         } catch (error) {
           console.error(`Ошибка при загрузке данных за ${date}:`, error);
+          let errorMessage = 'Не удалось загрузить данные';
           if (error instanceof MoyskladApiError) {
-            newErrors[date] = error.message;
+            errorMessage = error.message;
+            // Показываем уведомление об ошибке для пользователя
+            showError(`Ошибка загрузки данных за ${formatDate(date)}: ${error.message}`);
           } else {
-            newErrors[date] = 'Не удалось загрузить данные';
+            showError(`Ошибка загрузки данных за ${formatDate(date)}`);
           }
+          newErrors[date] = errorMessage;
           // Оставляем старые значения, если они есть, или устанавливаем 0
           if (!(date in newSalesByDay)) {
             newSalesByDay[date] = 0;
@@ -156,6 +172,11 @@ export const SalaryCalculator: React.FC = () => {
       setErrorDays((prev) => ({ ...prev, ...newErrors }));
     } catch (error) {
       console.error('Ошибка при загрузке данных из API:', error);
+      if (error instanceof MoyskladApiError) {
+        showError(`Ошибка API: ${error.message}`);
+      } else {
+        showError('Произошла ошибка при загрузке данных из API');
+      }
     } finally {
       // Удаляем дни из списка загрузки
       setLoadingDays((prev) => prev.filter(date => !dates.includes(date)));
@@ -189,7 +210,7 @@ export const SalaryCalculator: React.FC = () => {
     }
     // Отключаем предупреждение о зависимостях, так как мы хотим контролировать когда загружать данные
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.mode, state.workDays, moyskladSettings?.storeId]);
+  }, [state.mode, state.workDays, moyskladSettings?.storeId, loadDataFromAPI]);
 
   const handleWorkDaysChange = useCallback((workDays: string[]) => {
     setState((prev) => {
@@ -301,8 +322,8 @@ export const SalaryCalculator: React.FC = () => {
     };
     saveSalaryEntry(entry);
     setHistoryRefreshTrigger((prev) => prev + 1);
-    alert('Расчет зарплаты сохранен в историю!');
-  }, [state, breakdown]);
+    showSuccess('Расчет зарплаты сохранен в историю!');
+  }, [state, breakdown, showSuccess]);
 
   const handleLoadEntry = useCallback((entry: SalaryCalculation) => {
     // Игнорируем поле targetProductBonus, если оно есть в старых записях
@@ -339,16 +360,17 @@ export const SalaryCalculator: React.FC = () => {
 
   const handleExportToExcel = useCallback(() => {
     if (state.workDays.length === 0) {
-      alert('Нет данных для экспорта. Выберите рабочие дни.');
+      showError('Нет данных для экспорта. Выберите рабочие дни.');
       return;
     }
     try {
       exportSalaryToExcel(state, breakdown);
+      showSuccess('Данные успешно экспортированы в Excel!');
     } catch (error) {
       console.error('Ошибка при экспорте в Excel:', error);
-      alert('Произошла ошибка при экспорте в Excel.');
+      showError('Произошла ошибка при экспорте в Excel.');
     }
-  }, [state, breakdown]);
+  }, [state, breakdown, showSuccess, showError]);
 
   return (
     <div className={styles.app}>

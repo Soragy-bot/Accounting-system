@@ -65,11 +65,38 @@
   line-height: 1.4;
 }
 
-.loading {
+.loadingContainer {
   margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.loadingText {
   font-size: 0.85rem;
   color: var(--text-tertiary);
   font-style: italic;
+}
+
+.retryContainer {
+  margin-top: 0.5rem;
+}
+
+.retryButton {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--accent-primary);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--accent-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.retryButton:hover {
+  background: var(--accent-primary);
+  color: white;
 }
 
 .actions {

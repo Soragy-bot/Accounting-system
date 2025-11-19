@@ -31,8 +31,9 @@ export const InitialAmount: React.FC<InitialAmountProps> = ({
   return (
     <div className={styles.container}>
       <h2 className={styles.title}>Начальная сумма в кассе</h2>
-      <form onSubmit={handleSubmit} className={styles.form}>
+      <form onSubmit={handleSubmit} className={styles.form} aria-label="Форма установки начальной суммы">
         <input
+          id="initial-amount-input"
           type="text"
           value={inputValue}
           onChange={handleChange}
@@ -42,14 +43,16 @@ export const InitialAmount: React.FC<InitialAmountProps> = ({
           }}
           placeholder="0.00"
           className={styles.input}
+          aria-label="Введите начальную сумму в кассе"
+          aria-describedby={initialAmount > 0 ? "current-initial-amount" : undefined}
         />
-        <span className={styles.currency}>₽</span>
-        <button type="submit" className={styles.button}>
+        <span className={styles.currency} aria-hidden="true">₽</span>
+        <button type="submit" className={styles.button} aria-label="Установить начальную сумму">
           Установить
         </button>
       </form>
       {initialAmount > 0 && (
-        <p className={styles.current}>
+        <p id="current-initial-amount" className={styles.current} role="status" aria-live="polite">
           Текущая начальная сумма: <strong>{initialAmount.toFixed(2)} ₽</strong>
         </p>
       )}

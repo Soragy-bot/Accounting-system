@@ -5,12 +5,14 @@ import { MoneyInput } from '../components/MoneyInput';
 import { CurrentBalance } from '../components/CurrentBalance';
 import { History } from '../components/History';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { useNotification } from '../contexts/NotificationContext';
 import { calculateTotal } from '../utils/calculations';
 import { saveHistoryEntry } from '../utils/storage';
 import { CashState, CashEntry, MoneyCount } from '../types';
 import styles from './CashCounter.module.css';
 
 export const CashCounter: React.FC = () => {
+  const { showSuccess } = useNotification();
   const [state, setState] = useState<CashState>({
     initialAmount: 0,
     bills: {},
@@ -54,8 +56,8 @@ export const CashCounter: React.FC = () => {
     };
     saveHistoryEntry(entry);
     setHistoryRefreshTrigger((prev) => prev + 1);
-    alert('Подсчет сохранен в историю!');
-  }, [state, totalAmount]);
+    showSuccess('Подсчет сохранен в историю!');
+  }, [state, totalAmount, showSuccess]);
 
   const handleLoadEntry = useCallback((entry: CashEntry) => {
     setState({

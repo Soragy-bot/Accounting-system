@@ -22,11 +22,28 @@ export class MoyskladApiError extends Error {
     }
 }
 
-// Выполнение запроса к API через прокси
+// Retry-логика для сетевых ошибок
+const sleep = (ms: number): Promise<void> => {
+    return new Promise(resolve => setTimeout(resolve, ms));
+};
+
+const isRetryableError = (error: unknown): boolean => {
+    if (error instanceof MoyskladApiError) {
+        // Повторяем попытки для сетевых ошибок и ошибок лимита запросов
+        return error.status === 429 || error.status === undefined;
+    }
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+        return true;
+    }
+    return false;
+};
+
+// Выполнение запроса к API через прокси с retry-логикой
 const fetchApi = async <T>(
     endpoint: string,
     accessToken: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    retries: number = 3
 ): Promise<T> => {
     // Используем прокси-сервер для обхода CORS
     const url = `${API_BASE_URL}${endpoint}`;
@@ -36,58 +53,88 @@ const fetchApi = async <T>(
         ...options.headers,
     };
 
-    try {
-        const response = await fetch(url, {
-            ...options,
-            headers,
-        });
+    let lastError: Error | undefined;
 
-        if (!response.ok) {
-            let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-            let errorCode: string | undefined;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+            const response = await fetch(url, {
+                ...options,
+                headers,
+            });
 
-            try {
-                const errorData = await response.json();
-                if (errorData.errors && errorData.errors.length > 0) {
-                    errorMessage = errorData.errors.map((e: any) => e.error || e.message).join(', ');
-                    errorCode = errorData.errors[0]?.code;
+            if (!response.ok) {
+                let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                let errorCode: string | undefined;
+
+                try {
+                    const errorData = await response.json();
+                    if (errorData.errors && errorData.errors.length > 0) {
+                        errorMessage = errorData.errors.map((e: any) => e.error || e.message).join(', ');
+                        errorCode = errorData.errors[0]?.code;
+                    }
+                } catch {
+                    // Игнорируем ошибки парсинга ошибки
                 }
-            } catch {
-                // Игнорируем ошибки парсинга ошибки
+
+                if (response.status === 401) {
+                    throw new MoyskladApiError('Неверный токен доступа. Проверьте токен и попробуйте снова.', 401, errorCode);
+                }
+
+                if (response.status === 403) {
+                    throw new MoyskladApiError('Доступ запрещен. Проверьте права доступа токена.', 403, errorCode);
+                }
+
+                if (response.status === 429) {
+                    // Для ошибки лимита запросов делаем retry с экспоненциальной задержкой
+                    if (attempt < retries) {
+                        const delay = Math.min(1000 * Math.pow(2, attempt), 10000); // Максимум 10 секунд
+                        await sleep(delay);
+                        continue;
+                    }
+                    throw new MoyskladApiError('Превышен лимит запросов. Подождите немного и попробуйте снова.', 429, errorCode);
+                }
+
+                throw new MoyskladApiError(errorMessage, response.status, errorCode);
             }
 
-            if (response.status === 401) {
-                throw new MoyskladApiError('Неверный токен доступа. Проверьте токен и попробуйте снова.', 401, errorCode);
+            // Если ответ пустой (например, при удалении)
+            if (response.status === 204 || response.headers.get('content-length') === '0') {
+                return {} as T;
             }
 
-            if (response.status === 403) {
-                throw new MoyskladApiError('Доступ запрещен. Проверьте права доступа токена.', 403, errorCode);
+            return await response.json();
+        } catch (error) {
+            lastError = error instanceof Error ? error : new Error(String(error));
+
+            if (error instanceof MoyskladApiError) {
+                // Не повторяем попытки для ошибок авторизации и доступа
+                if (error.status === 401 || error.status === 403) {
+                    throw error;
+                }
             }
 
-            if (response.status === 429) {
-                throw new MoyskladApiError('Превышен лимит запросов. Подождите немного и попробуйте снова.', 429, errorCode);
+            // Если это retryable ошибка и есть еще попытки, повторяем
+            if (isRetryableError(error) && attempt < retries) {
+                const delay = Math.min(1000 * Math.pow(2, attempt), 10000); // Экспоненциальная задержка, максимум 10 секунд
+                await sleep(delay);
+                continue;
             }
 
-            throw new MoyskladApiError(errorMessage, response.status, errorCode);
-        }
+            // Если это не retryable ошибка или закончились попытки, пробрасываем ошибку
+            if (error instanceof MoyskladApiError) {
+                throw error;
+            }
 
-        // Если ответ пустой (например, при удалении)
-        if (response.status === 204 || response.headers.get('content-length') === '0') {
-            return {} as T;
-        }
+            if (error instanceof TypeError && error.message.includes('fetch')) {
+                throw new MoyskladApiError('Ошибка сети. Проверьте подключение к интернету.');
+            }
 
-        return await response.json();
-    } catch (error) {
-        if (error instanceof MoyskladApiError) {
-            throw error;
+            throw new MoyskladApiError(`Неожиданная ошибка: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
-
-        if (error instanceof TypeError && error.message.includes('fetch')) {
-            throw new MoyskladApiError('Ошибка сети. Проверьте подключение к интернету.');
-        }
-
-        throw new MoyskladApiError(`Неожиданная ошибка: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+
+    // Если дошли сюда, значит все попытки исчерпаны
+    throw lastError || new MoyskladApiError('Не удалось выполнить запрос после нескольких попыток');
 };
 
 // Получение списка розничных точек продажи
@@ -293,68 +340,95 @@ export const calculateSalesByDay = async (
         // Подсчитываем только применимые розничные продажи (applicable = true)
         const applicableDemands = demands.filter(d => d.applicable !== false);
 
+        // Параллельно загружаем позиции для всех отгрузок
+        const positionsPromises = applicableDemands.map(demand =>
+            getDemandPositions(accessToken, demand.id, true)
+                .then(positions => ({ demand, positions }))
+                .catch(error => {
+                    console.warn('Не удалось получить позиции для отгрузки:', demand.id, error);
+                    return { demand, positions: [], error };
+                })
+        );
+
+        const demandsWithPositions = await Promise.all(positionsPromises);
+
         let total = 0;
         let validDemandsCount = 0;
 
-        // Обрабатываем каждую отгрузку, чтобы исключить товары табаконистов
-        for (const demand of applicableDemands) {
-            try {
-                // Получаем позиции с товарами (expand=assortment для получения товаров сразу)
-                const positions = await getDemandPositions(accessToken, demand.id, true);
+        // Обрабатываем каждую отгрузку с позициями
+        for (const { demand, positions, error } of demandsWithPositions) {
+            if (error) {
+                // Если не удалось получить позиции, учитываем всю сумму отгрузки (на случай ошибки API)
+                total += demand.sum || 0;
+                validDemandsCount++;
+                continue;
+            }
 
-                // Начинаем с общей суммы отгрузки (demand.sum включает все позиции с учетом скидок/налогов)
-                let demandTotal = demand.sum || 0;
+            // Начинаем с общей суммы отгрузки (demand.sum включает все позиции с учетом скидок/налогов)
+            let demandTotal = demand.sum || 0;
 
-                // Вычитаем сумму товаров табаконистов из общей суммы
-                let tobaccoProductsSum = 0;
+            // Вычитаем сумму товаров табаконистов из общей суммы
+            let tobaccoProductsSum = 0;
 
-                // Обрабатываем каждую позицию, чтобы найти товары табаконистов
-                for (const position of positions) {
-                    const assortment = position.assortment as any;
+            // Собираем позиции, для которых нужны дополнительные запросы товаров
+            const productPromises: Promise<Product | null>[] = [];
+            const positionIndices: number[] = [];
 
-                    // Проверяем тип ассортимента
-                    let isProduct = false;
-                    if (assortment && typeof assortment === 'object') {
-                        // Если это полный объект товара (expand=assortment)
-                        if ('meta' in assortment && assortment.meta && assortment.meta.type === 'product') {
-                            isProduct = true;
-                        } else if ('id' in assortment && 'name' in assortment && !('meta' in assortment && assortment.meta?.type === 'service')) {
-                            // Если это объект товара без meta, тоже считаем товаром
-                            isProduct = true;
-                        }
+            for (let i = 0; i < positions.length; i++) {
+                const position = positions[i];
+                const assortment = position.assortment as any;
+
+                // Проверяем тип ассортимента
+                let isProduct = false;
+                if (assortment && typeof assortment === 'object') {
+                    // Если это полный объект товара (expand=assortment)
+                    if ('meta' in assortment && assortment.meta && assortment.meta.type === 'product') {
+                        isProduct = true;
+                    } else if ('id' in assortment && 'name' in assortment && !('meta' in assortment && assortment.meta?.type === 'service')) {
+                        // Если это объект товара без meta, тоже считаем товаром
+                        isProduct = true;
                     }
+                }
 
-                    if (!isProduct) {
-                        continue; // Услуги и комплекты не проверяем
-                    }
+                if (!isProduct) {
+                    continue; // Услуги и комплекты не проверяем
+                }
 
-                    // Получаем товар (уже включен в позицию или делаем отдельный запрос)
-                    const product = await getProductFromPosition(accessToken, position);
-
-                    if (!product) {
-                        continue; // Если не удалось получить товар, пропускаем
-                    }
-
-                    // Если товар табаконистов, вычитаем его сумму из общей суммы
+                // Проверяем, нужен ли отдельный запрос товара
+                if ('id' in assortment && 'name' in assortment && !('meta' in assortment && assortment.meta?.type === 'service')) {
+                    // Товар уже включен в позицию
+                    const product = assortment as Product;
                     if (isTobaccoStoreProduct(product)) {
-                        // Используем итоговую сумму позиции (с учетом скидок и налогов)
+                        const positionSum = position.sum || (position.price * position.quantity) || 0;
+                        tobaccoProductsSum += positionSum;
+                    }
+                } else if ('meta' in assortment && assortment.meta && assortment.meta.type === 'product') {
+                    // Нужен отдельный запрос товара
+                    positionIndices.push(i);
+                    productPromises.push(getProductFromPosition(accessToken, position));
+                }
+            }
+
+            // Параллельно загружаем товары для позиций, которые требуют отдельного запроса
+            if (productPromises.length > 0) {
+                const products = await Promise.all(productPromises);
+                for (let j = 0; j < products.length; j++) {
+                    const product = products[j];
+                    if (product && isTobaccoStoreProduct(product)) {
+                        const positionIndex = positionIndices[j];
+                        const position = positions[positionIndex];
                         const positionSum = position.sum || (position.price * position.quantity) || 0;
                         tobaccoProductsSum += positionSum;
                     }
                 }
+            }
 
-                // Вычитаем сумму товаров табаконистов из общей суммы отгрузки
-                demandTotal = Math.max(0, demandTotal - tobaccoProductsSum);
+            // Вычитаем сумму товаров табаконистов из общей суммы отгрузки
+            demandTotal = Math.max(0, demandTotal - tobaccoProductsSum);
 
-                // Если после вычитания сумма больше нуля, учитываем отгрузку
-                if (demandTotal > 0) {
-                    total += demandTotal;
-                    validDemandsCount++;
-                }
-            } catch (error) {
-                // Если не удалось получить позиции, учитываем всю сумму отгрузки (на случай ошибки API)
-                console.warn('Не удалось получить позиции для отгрузки:', demand.id, error);
-                total += demand.sum || 0;
+            // Если после вычитания сумма больше нуля, учитываем отгрузку
+            if (demandTotal > 0) {
+                total += demandTotal;
                 validDemandsCount++;
             }
         }
@@ -380,58 +454,72 @@ export const calculateTargetProductsByDay = async (
         const demands = await getDemandsByDate(accessToken, date, settings.storeId);
         const applicableDemands = demands.filter(d => d.applicable !== false);
 
+        // Параллельно загружаем позиции для всех отгрузок
+        const positionsPromises = applicableDemands.map(demand =>
+            getDemandPositions(accessToken, demand.id, true)
+                .then(positions => ({ demand, positions }))
+                .catch(error => {
+                    console.warn('Не удалось получить позиции для розничной продажи:', demand.id, error);
+                    return { demand, positions: [] };
+                })
+        );
+
+        const demandsWithPositions = await Promise.all(positionsPromises);
+
         let totalQuantity = 0;
 
-        // Обрабатываем каждую розничную продажу
-        for (const demand of applicableDemands) {
-            try {
-                // Получаем позиции с товарами (expand=assortment для получения товаров сразу)
-                const positions = await getDemandPositions(accessToken, demand.id, true);
+        // Обрабатываем каждую розничную продажу с позициями
+        for (const { positions } of demandsWithPositions) {
+            // Собираем позиции, для которых нужны дополнительные запросы товаров
+            const productPromises: Promise<Product | null>[] = [];
+            const positionIndices: number[] = [];
+            const positionQuantities: number[] = [];
 
-                // Обрабатываем каждую позицию
-                for (const position of positions) {
-                    const assortment = position.assortment as any;
+            for (let i = 0; i < positions.length; i++) {
+                const position = positions[i];
+                const assortment = position.assortment as any;
 
-                    // Проверяем тип ассортимента
-                    let isProduct = false;
-                    if (assortment && typeof assortment === 'object') {
-                        // Если это полный объект товара (expand=assortment)
-                        if ('meta' in assortment && assortment.meta && assortment.meta.type === 'product') {
-                            isProduct = true;
-                        } else if ('id' in assortment && 'name' in assortment && !('meta' in assortment && assortment.meta?.type === 'service')) {
-                            // Если это объект товара без meta, тоже считаем товаром
-                            isProduct = true;
-                        }
+                // Проверяем тип ассортимента
+                let isProduct = false;
+                if (assortment && typeof assortment === 'object') {
+                    // Если это полный объект товара (expand=assortment)
+                    if ('meta' in assortment && assortment.meta && assortment.meta.type === 'product') {
+                        isProduct = true;
+                    } else if ('id' in assortment && 'name' in assortment && !('meta' in assortment && assortment.meta?.type === 'service')) {
+                        // Если это объект товара без meta, тоже считаем товаром
+                        isProduct = true;
                     }
-
-                    if (!isProduct) {
-                        continue; // Услуги и комплекты не проверяем
-                    }
-
-                    // Получаем товар (уже включен в позицию или делаем отдельный запрос)
-                    const product = await getProductFromPosition(accessToken, position);
-
-                    if (!product) {
-                        continue; // Если не удалось получить товар, пропускаем
-                    }
-
-                    // Исключаем товары табаконистов (если pathName начинается с "Сигаретная продукция/Сигаретная продукция (табаконисты)")
-                    if (isTobaccoStoreProduct(product)) {
-                        continue;
-                    }
-
-                    // Проверяем атрибут "Целевой продукт" = true
-                    if (!isTargetProduct(product)) {
-                        continue;
-                    }
-
-                    // Если товар подходит под критерии, добавляем количество
-                    totalQuantity += position.quantity || 0;
                 }
-            } catch (error) {
-                // Если не удалось получить позиции, пропускаем розничную продажу
-                console.warn('Не удалось получить позиции для розничной продажи:', demand.id, error);
-                continue;
+
+                if (!isProduct) {
+                    continue; // Услуги и комплекты не проверяем
+                }
+
+                // Проверяем, нужен ли отдельный запрос товара
+                if ('id' in assortment && 'name' in assortment && !('meta' in assortment && assortment.meta?.type === 'service')) {
+                    // Товар уже включен в позицию
+                    const product = assortment as Product;
+                    // Исключаем товары табаконистов
+                    if (!isTobaccoStoreProduct(product) && isTargetProduct(product)) {
+                        totalQuantity += position.quantity || 0;
+                    }
+                } else if ('meta' in assortment && assortment.meta && assortment.meta.type === 'product') {
+                    // Нужен отдельный запрос товара
+                    positionIndices.push(i);
+                    positionQuantities.push(position.quantity || 0);
+                    productPromises.push(getProductFromPosition(accessToken, position));
+                }
+            }
+
+            // Параллельно загружаем товары для позиций, которые требуют отдельного запроса
+            if (productPromises.length > 0) {
+                const products = await Promise.all(productPromises);
+                for (let j = 0; j < products.length; j++) {
+                    const product = products[j];
+                    if (product && !isTobaccoStoreProduct(product) && isTargetProduct(product)) {
+                        totalQuantity += positionQuantities[j];
+                    }
+                }
             }
         }
 

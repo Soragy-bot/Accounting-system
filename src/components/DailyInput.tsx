@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { parseAndValidateMoney, parseAndValidateInteger } from '../utils/validation';
+import { LoadingSkeleton } from './LoadingSkeleton';
 import styles from './DailyInput.module.css';
 
 interface DailyInputProps {
@@ -24,6 +26,10 @@ export const DailyInput: React.FC<DailyInputProps> = ({
   errorDays = {},
   dataSource = {},
 }) => {
+  const [validationErrors, setValidationErrors] = useState<{
+    [date: string]: { sales?: string; targetProducts?: string };
+  }>({});
+
   const formatDate = (dateStr: string): string => {
     const date = new Date(dateStr + 'T00:00:00');
     return date.toLocaleDateString('ru-RU', {
@@ -35,25 +41,49 @@ export const DailyInput: React.FC<DailyInputProps> = ({
   };
 
   const handleSalesChange = (date: string, value: string) => {
-    if (value === '') {
-      onSalesChange(date, 0);
-      return;
-    }
+    const { value: numValue, validation } = parseAndValidateMoney(value);
+    
+    setValidationErrors((prev) => {
+      const newErrors = { ...prev };
+      if (!newErrors[date]) {
+        newErrors[date] = {};
+      }
+      if (!validation.isValid && validation.error) {
+        newErrors[date].sales = validation.error;
+      } else {
+        delete newErrors[date].sales;
+        if (Object.keys(newErrors[date]).length === 0) {
+          delete newErrors[date];
+        }
+      }
+      return newErrors;
+    });
 
-    const numValue = parseFloat(value);
-    if (!isNaN(numValue) && numValue >= 0) {
+    if (validation.isValid) {
       onSalesChange(date, numValue);
     }
   };
 
   const handleTargetProductsCountChange = (date: string, value: string) => {
-    if (value === '') {
-      onTargetProductsCountChange(date, 0);
-      return;
-    }
+    const { value: numValue, validation } = parseAndValidateInteger(value);
+    
+    setValidationErrors((prev) => {
+      const newErrors = { ...prev };
+      if (!newErrors[date]) {
+        newErrors[date] = {};
+      }
+      if (!validation.isValid && validation.error) {
+        newErrors[date].targetProducts = validation.error;
+      } else {
+        delete newErrors[date].targetProducts;
+        if (Object.keys(newErrors[date]).length === 0) {
+          delete newErrors[date];
+        }
+      }
+      return newErrors;
+    });
 
-    const numValue = parseInt(value, 10);
-    if (!isNaN(numValue) && numValue >= 0) {
+    if (validation.isValid) {
       onTargetProductsCountChange(date, numValue);
     }
   };
@@ -100,8 +130,10 @@ export const DailyInput: React.FC<DailyInputProps> = ({
                 )}
               </div>
               {isLoading && (
-                <div className={styles.loading}>
-                  Загрузка данных из API...
+                <div className={styles.loadingContainer}>
+                  <LoadingSkeleton width="100%" height="2rem" />
+                  <LoadingSkeleton width="60%" height="2rem" />
+                  <span className={styles.loadingText}>Загрузка данных из API...</span>
                 </div>
               )}
               {error && (
@@ -121,12 +153,19 @@ export const DailyInput: React.FC<DailyInputProps> = ({
                         value={salesByDay[date] || ''}
                         onChange={(e) => handleSalesChange(date, e.target.value)}
                         onWheel={handleWheel}
-                        className={styles.input}
+                        className={`${styles.input} ${validationErrors[date]?.sales ? styles.inputError : ''}`}
                         placeholder="0.00"
                         disabled={isLoading}
+                        aria-invalid={!!validationErrors[date]?.sales}
+                        aria-describedby={validationErrors[date]?.sales ? `sales-error-${date}` : undefined}
                       />
                       <span className={styles.currency}>₽</span>
                     </div>
+                    {validationErrors[date]?.sales && (
+                      <span id={`sales-error-${date}`} className={styles.validationError} role="alert">
+                        {validationErrors[date].sales}
+                      </span>
+                    )}
                   </label>
                   
                   <label className={styles.inputGroup}>
@@ -137,10 +176,17 @@ export const DailyInput: React.FC<DailyInputProps> = ({
                       value={targetProductsCount[date] || ''}
                       onChange={(e) => handleTargetProductsCountChange(date, e.target.value)}
                       onWheel={handleWheel}
-                      className={styles.input}
+                      className={`${styles.input} ${validationErrors[date]?.targetProducts ? styles.inputError : ''}`}
                       placeholder="0"
                       disabled={isLoading}
+                      aria-invalid={!!validationErrors[date]?.targetProducts}
+                      aria-describedby={validationErrors[date]?.targetProducts ? `target-products-error-${date}` : undefined}
                     />
+                    {validationErrors[date]?.targetProducts && (
+                      <span id={`target-products-error-${date}`} className={styles.validationError} role="alert">
+                        {validationErrors[date].targetProducts}
+                      </span>
+                    )}
                   </label>
                 </div>
               )}

@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { parseAndValidateMoney, parseAndValidatePercentage } from '../utils/validation';
 import styles from './SalaryInput.module.css';
 
 interface SalaryInputProps {
@@ -14,18 +15,28 @@ export const SalaryInput: React.FC<SalaryInputProps> = ({
   onDailyRateChange,
   onSalesPercentageChange,
 }) => {
-  const handleChange = (
-    value: string,
-    onChange: (value: number) => void
-  ) => {
-    if (value === '') {
-      onChange(0);
-      return;
-    }
+  const [dailyRateError, setDailyRateError] = useState<string | undefined>();
+  const [salesPercentageError, setSalesPercentageError] = useState<string | undefined>();
 
-    const numValue = parseFloat(value);
-    if (!isNaN(numValue) && numValue >= 0) {
-      onChange(numValue);
+  const handleDailyRateChange = (value: string) => {
+    const { value: numValue, validation } = parseAndValidateMoney(value);
+    
+    if (!validation.isValid && validation.error) {
+      setDailyRateError(validation.error);
+    } else {
+      setDailyRateError(undefined);
+      onDailyRateChange(numValue);
+    }
+  };
+
+  const handleSalesPercentageChange = (value: string) => {
+    const { value: numValue, validation } = parseAndValidatePercentage(value, 0, 100);
+    
+    if (!validation.isValid && validation.error) {
+      setSalesPercentageError(validation.error);
+    } else {
+      setSalesPercentageError(undefined);
+      onSalesPercentageChange(numValue);
     }
   };
 
@@ -46,11 +57,18 @@ export const SalaryInput: React.FC<SalaryInputProps> = ({
             min="0"
             step="0.01"
             value={dailyRate || ''}
-            onChange={(e) => handleChange(e.target.value, onDailyRateChange)}
+            onChange={(e) => handleDailyRateChange(e.target.value)}
             onWheel={handleWheel}
-            className={styles.input}
+            className={`${styles.input} ${dailyRateError ? styles.inputError : ''}`}
             placeholder="0.00"
+            aria-invalid={!!dailyRateError}
+            aria-describedby={dailyRateError ? 'dailyRate-error' : undefined}
           />
+          {dailyRateError && (
+            <span id="dailyRate-error" className={styles.errorMessage} role="alert">
+              {dailyRateError}
+            </span>
+          )}
         </label>
       </div>
 
@@ -63,11 +81,18 @@ export const SalaryInput: React.FC<SalaryInputProps> = ({
             max="100"
             step="0.1"
             value={salesPercentage || ''}
-            onChange={(e) => handleChange(e.target.value, onSalesPercentageChange)}
+            onChange={(e) => handleSalesPercentageChange(e.target.value)}
             onWheel={handleWheel}
-            className={styles.input}
+            className={`${styles.input} ${salesPercentageError ? styles.inputError : ''}`}
             placeholder="0"
+            aria-invalid={!!salesPercentageError}
+            aria-describedby={salesPercentageError ? 'salesPercentage-error' : undefined}
           />
+          {salesPercentageError && (
+            <span id="salesPercentage-error" className={styles.errorMessage} role="alert">
+              {salesPercentageError}
+            </span>
+          )}
         </label>
       </div>
     </div>

@@ -5,7 +5,7 @@ interface CurrentBalanceProps {
   totalAmount: number;
 }
 
-export const CurrentBalance: React.FC<CurrentBalanceProps> = ({
+export const CurrentBalance: React.FC<CurrentBalanceProps> = React.memo(({
   totalAmount,
 }) => {
   const isPositive = totalAmount > 0;
@@ -31,17 +31,22 @@ export const CurrentBalance: React.FC<CurrentBalanceProps> = ({
   return (
     <div className={styles.container}>
       <h2 className={styles.title}>Текущая сумма</h2>
-      <div className={getClassName()}>
-        <span className={styles.sign}>{getSign()}</span>
+      <div 
+        className={getClassName()}
+        role="status"
+        aria-live="polite"
+        aria-label={`Текущая сумма: ${getSign()}${formatAmount(totalAmount)} рублей`}
+      >
+        <span className={styles.sign} aria-hidden="true">{getSign()}</span>
         <span className={styles.amount}>{formatAmount(totalAmount)}</span>
-        <span className={styles.currency}>₽</span>
+        <span className={styles.currency} aria-hidden="true">₽</span>
       </div>
-      <p className={styles.status}>
+      <p className={styles.status} role="status" aria-live="polite">
         {isPositive && 'Касса в плюсе'}
         {isNegative && 'Касса в минусе'}
         {isZero && 'Касса сведена к нулю'}
       </p>
     </div>
   );
-};
+});
 

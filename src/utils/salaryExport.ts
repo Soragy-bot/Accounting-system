@@ -1,10 +1,9 @@
 import * as XLSX from 'xlsx-js-style';
 import { SalaryState } from '../types';
 import { calculateSalaryBreakdown } from './salaryCalculations';
+import { TARGET_PRODUCT_BONUS } from '../constants';
 
 type SalaryBreakdown = ReturnType<typeof calculateSalaryBreakdown>;
-
-const TARGET_PRODUCT_BONUS = 50; // Константа бонуса за целевой товар
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
@@ -125,7 +124,7 @@ const styles = {
 };
 
 // Применить стиль к ячейке
-const applyStyle = (sheet: XLSX.WorkSheet, cellAddress: string, style: any) => {
+const applyStyle = (sheet: XLSX.WorkSheet, cellAddress: string, style: XLSX.CellStyle) => {
   if (!sheet[cellAddress]) {
     sheet[cellAddress] = { t: 's', v: '' };
   }

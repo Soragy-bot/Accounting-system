@@ -62,6 +62,8 @@ export const History: React.FC<HistoryProps> = ({ onLoadEntry, refreshTrigger })
         <button
           onClick={() => setIsOpen(true)}
           className={styles.toggleButton}
+          aria-label={`Показать историю подсчетов. Всего записей: ${entries.length}`}
+          aria-expanded="false"
         >
           Показать историю ({entries.length})
         </button>
@@ -74,12 +76,18 @@ export const History: React.FC<HistoryProps> = ({ onLoadEntry, refreshTrigger })
       <div className={styles.header}>
         <h2 className={styles.title}>История подсчетов</h2>
         <div className={styles.actions}>
-          <button onClick={handleClear} className={styles.clearButton}>
+          <button 
+            onClick={handleClear} 
+            className={styles.clearButton}
+            aria-label="Очистить всю историю подсчетов"
+          >
             Очистить
           </button>
           <button
             onClick={() => setIsOpen(false)}
             className={styles.closeButton}
+            aria-label="Скрыть историю подсчетов"
+            aria-expanded="true"
           >
             Скрыть
           </button>
@@ -87,17 +95,20 @@ export const History: React.FC<HistoryProps> = ({ onLoadEntry, refreshTrigger })
       </div>
 
       {entries.length === 0 ? (
-        <p className={styles.empty}>История пуста</p>
+        <p className={styles.empty} role="status" aria-live="polite">История пуста</p>
       ) : (
-        <div className={styles.list}>
+        <div className={styles.list} role="list" aria-label="Список записей истории подсчетов">
           {entries.map((entry) => (
-            <div key={entry.id} className={styles.entry}>
+            <div key={entry.id} className={styles.entry} role="listitem">
               <div className={styles.entryHeader}>
-                <span className={styles.date}>{formatDate(entry.timestamp)}</span>
+                <time className={styles.date} dateTime={new Date(entry.timestamp).toISOString()}>
+                  {formatDate(entry.timestamp)}
+                </time>
                 <span
                   className={`${styles.total} ${
                     entry.totalAmount >= 0 ? styles.positive : styles.negative
                   }`}
+                  aria-label={`Итоговая сумма: ${formatAmount(entry.totalAmount)}`}
                 >
                   {formatAmount(entry.totalAmount)}
                 </span>
@@ -109,12 +120,14 @@ export const History: React.FC<HistoryProps> = ({ onLoadEntry, refreshTrigger })
                 <button
                   onClick={() => handleLoad(entry)}
                   className={styles.loadButton}
+                  aria-label={`Загрузить запись от ${formatDate(entry.timestamp)}`}
                 >
                   Загрузить
                 </button>
                 <button
                   onClick={() => handleDelete(entry.id)}
                   className={styles.deleteButton}
+                  aria-label={`Удалить запись от ${formatDate(entry.timestamp)}`}
                   title="Удалить запись"
                 >
                   🗑️

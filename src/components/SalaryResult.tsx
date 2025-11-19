@@ -9,7 +9,7 @@ interface SalaryResultProps {
   workDaysCount: number;
 }
 
-export const SalaryResult: React.FC<SalaryResultProps> = ({
+export const SalaryResult: React.FC<SalaryResultProps> = React.memo(({
   rateSalary,
   salesBonus,
   targetBonus,
@@ -59,5 +59,5 @@ export const SalaryResult: React.FC<SalaryResultProps> = ({
       </div>
     </div>
   );
-};
+});
 

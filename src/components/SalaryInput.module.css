@@ -61,6 +61,17 @@
   -moz-appearance: textfield;
 }
 
+.inputError {
+  border-color: var(--accent-danger) !important;
+}
+
+.errorMessage {
+  font-size: 0.8rem;
+  color: var(--accent-danger);
+  margin-top: 0.25rem;
+  transition: color 0.3s ease;
+}
+
 @media (max-width: 600px) {
   .container {
     padding: 1rem;

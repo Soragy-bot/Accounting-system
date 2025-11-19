@@ -1,5 +1,6 @@
 import React from 'react';
 import { BILLS, COINS_RUBLES, COINS_KOPECKS } from '../constants';
+import { parseAndValidateInteger } from '../utils/validation';
 import { MoneyCount } from '../types';
 import styles from './MoneyInput.module.css';
 
@@ -86,15 +87,12 @@ export const MoneyInput: React.FC<MoneyInputProps> = ({
     category: 'bills' | 'coinsRubles' | 'coinsKopecks',
     denomination: number
   ) => {
-    // Разрешаем пустую строку (будет интерпретироваться как 0 при расчете)
-    if (value === '') {
-      updateValue(category, denomination, 0);
+    const { value: numValue, validation } = parseAndValidateInteger(value, 0);
+    
+    // Если валидация не прошла, не обновляем значение
+    if (!validation.isValid) {
       return;
     }
-
-    // Парсим число (включая отрицательные)
-    const numValue = parseInt(value, 10);
-    if (isNaN(numValue)) return;
 
     updateValue(category, denomination, numValue);
   };

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { MoyskladSettings, Store } from '../types';
 import { getMoyskladSettings, saveMoyskladSettings, getDefaultMoyskladSettings } from '../utils/moyskladStorage';
 import { getStores, testConnection, MoyskladApiError } from '../utils/moyskladApi';
+import { LoadingSkeleton } from './LoadingSkeleton';
 import styles from './MoyskladSettings.module.css';
 
 interface MoyskladSettingsProps {
@@ -212,7 +213,23 @@ export const MoyskladSettingsComponent: React.FC<MoyskladSettingsProps> = ({ onS
                         ))}
                     </select>
                 </label>
-                {loading && <div className={styles.loading}>Загрузка...</div>}
+                {loading && (
+                    <div className={styles.loadingContainer}>
+                        <LoadingSkeleton width="100%" height="2.5rem" />
+                        <span className={styles.loadingText}>Загрузка точек продажи...</span>
+                    </div>
+                )}
+                {error && connectionStatus === 'error' && !loading && (
+                    <div className={styles.retryContainer}>
+                        <button
+                            type="button"
+                            onClick={() => settings.accessToken && loadStores(settings.accessToken)}
+                            className={styles.retryButton}
+                        >
+                            Повторить попытку
+                        </button>
+                    </div>
+                )}
             </div>
 
             <div className={styles.actions}>

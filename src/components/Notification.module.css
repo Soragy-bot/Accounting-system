@@ -1,0 +1,139 @@
+.container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 400px;
+  pointer-events: none;
+}
+
+.notification {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+  pointer-events: auto;
+  animation: slideIn 0.3s ease-out;
+  backdrop-filter: blur(10px);
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.notification.success {
+  border-left: 4px solid var(--accent-success);
+}
+
+.notification.error {
+  border-left: 4px solid var(--accent-danger);
+}
+
+.notification.warning {
+  border-left: 4px solid var(--accent-warning);
+}
+
+.notification.info {
+  border-left: 4px solid var(--accent-primary);
+}
+
+.icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 18px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.notification.success .icon {
+  background: rgba(39, 174, 96, 0.2);
+  color: var(--accent-success);
+}
+
+.notification.error .icon {
+  background: rgba(231, 76, 60, 0.2);
+  color: var(--accent-danger);
+}
+
+.notification.warning .icon {
+  background: rgba(243, 156, 18, 0.2);
+  color: var(--accent-warning);
+}
+
+.notification.info .icon {
+  background: rgba(74, 144, 226, 0.2);
+  color: var(--accent-primary);
+}
+
+.message {
+  flex: 1;
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+.closeButton {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+  padding: 0;
+  line-height: 1;
+}
+
+.closeButton:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--text-primary);
+}
+
+.closeButton:active {
+  transform: scale(0.95);
+}
+
+@media (max-width: 600px) {
+  .container {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+
+  .notification {
+    padding: 12px;
+  }
+
+  .message {
+    font-size: 13px;
+  }
+}
+
