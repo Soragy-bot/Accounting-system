@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getHistory } from '../utils/storage';
-import { CashEntry } from '../types';
-import { ThemeToggle } from '../components/ThemeToggle';
+import { getHistory } from '../features/cash-counter/services/cashStorage';
+import { CashEntry } from '../features/cash-counter/types';
+import { ThemeToggle } from '../shared/components/ThemeToggle';
 import styles from './HomePage.module.css';
 
 export const HomePage: React.FC = () => {

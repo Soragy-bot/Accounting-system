@@ -5,6 +5,8 @@ services:
       dockerfile: Dockerfile
     container_name: accounting-system
     ports:
+      # Формат: "внешний_порт:внутренний_порт"
+      # Приложение доступно на порту 8880
       - "8880:8880"
     restart: unless-stopped
     networks:

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { safeGetItem, safeSetItem } from '../utils/localStorage';
+import { safeGetItem, safeSetItem } from '../shared/api/storage';
 
 export type ThemeMode = 'light' | 'dark';
 export type ColorPalette = 'blue' | 'purple' | 'green' | 'orange' | 'red' | 'pink' | 'cyan' | 'teal' | 'indigo' | 'amber' | 'midnight';

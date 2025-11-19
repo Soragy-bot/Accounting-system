@@ -2,9 +2,9 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { NotificationProvider } from './contexts/NotificationContext';
-import { NotificationContainer } from './components/Notification';
-import { ErrorBoundary } from './components/ErrorBoundary';
-import { LoadingSkeleton } from './components/LoadingSkeleton';
+import { NotificationContainer } from './shared/components/Notification';
+import { ErrorBoundary } from './shared/components/ErrorBoundary';
+import { LoadingSkeleton } from './shared/components/LoadingSkeleton';
 
 // Lazy loading для страниц с code splitting
 const HomePage = lazy(() => import('./pages/HomePage').then(module => ({ default: module.HomePage })));
