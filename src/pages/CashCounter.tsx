@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { InitialAmount } from '../components/InitialAmount';
 import { MoneyInput } from '../components/MoneyInput';
@@ -9,17 +9,22 @@ import { useNotification } from '../contexts/NotificationContext';
 import { calculateTotal } from '../utils/calculations';
 import { saveHistoryEntry } from '../utils/storage';
 import { CashState, CashEntry, MoneyCount } from '../types';
+import { useAutoSave } from '../hooks/useAutoSave';
+import { saveCashCounterDraft, loadCashCounterDraft, clearCashCounterDraft } from '../utils/draftStorage';
 import styles from './CashCounter.module.css';
 
+const INITIAL_STATE: CashState = {
+  initialAmount: 0,
+  bills: {},
+  coinsRubles: {},
+  coinsKopecks: {},
+};
+
 export const CashCounter: React.FC = () => {
-  const { showSuccess } = useNotification();
-  const [state, setState] = useState<CashState>({
-    initialAmount: 0,
-    bills: {},
-    coinsRubles: {},
-    coinsKopecks: {},
-  });
+  const { showSuccess, showInfo } = useNotification();
+  const [state, setState] = useState<CashState>(INITIAL_STATE);
   const [historyRefreshTrigger, setHistoryRefreshTrigger] = useState(0);
+  const initialStateRef = useRef<CashState>(INITIAL_STATE);
 
   // Мемоизация вычисления общей суммы
   const totalAmount = useMemo(() => {
@@ -47,6 +52,42 @@ export const CashCounter: React.FC = () => {
     setState((prev) => ({ ...prev, coinsKopecks }));
   }, []);
 
+  // Обработчик восстановления черновика
+  const handleRestore = useCallback((draft: CashState) => {
+    // Сохраняем текущее состояние перед восстановлением
+    const previousState = { ...state };
+    
+    // Восстанавливаем черновик
+    setState(draft);
+    
+    // Показываем уведомление с возможностью отменить (автоматически исчезнет через 7 секунд)
+    showInfo('Черновик восстановлен', 7000, {
+      label: 'Отменить',
+      onClick: () => {
+        // Возвращаем предыдущее состояние
+        setState(previousState);
+        clearCashCounterDraft();
+      },
+    });
+  }, [state, showInfo]);
+
+  // Обработчик отмены восстановления
+  const handleRestoreCancel = useCallback(() => {
+    setState(INITIAL_STATE);
+    initialStateRef.current = INITIAL_STATE;
+  }, []);
+
+  // Автосохранение черновика
+  const clearDraft = useAutoSave({
+    key: 'cash-counter-draft',
+    state,
+    saveDraft: saveCashCounterDraft,
+    loadDraft: loadCashCounterDraft,
+    clearDraft: clearCashCounterDraft,
+    onRestore: handleRestore,
+    onRestoreCancel: handleRestoreCancel,
+  });
+
   const handleSave = useCallback(() => {
     const entry: CashEntry = {
       id: Date.now().toString(),
@@ -60,7 +101,9 @@ export const CashCounter: React.FC = () => {
     saveHistoryEntry(entry);
     setHistoryRefreshTrigger((prev) => prev + 1);
     showSuccess('Подсчет сохранен в историю!');
-  }, [state, totalAmount, showSuccess]);
+    // Очищаем черновик после сохранения в историю
+    clearDraft();
+  }, [state, totalAmount, showSuccess, clearDraft]);
 
   const handleLoadEntry = useCallback((entry: CashEntry) => {
     setState({
@@ -73,14 +116,12 @@ export const CashCounter: React.FC = () => {
 
   const handleReset = useCallback(() => {
     if (window.confirm('Вы уверены, что хотите сбросить все данные?')) {
-      setState({
-        initialAmount: 0,
-        bills: {},
-        coinsRubles: {},
-        coinsKopecks: {},
-      });
+      setState(INITIAL_STATE);
+      initialStateRef.current = INITIAL_STATE;
+      // Очищаем черновик при явном сбросе
+      clearDraft();
     }
-  }, []);
+  }, [clearDraft]);
 
   return (
     <div className={styles.app}>

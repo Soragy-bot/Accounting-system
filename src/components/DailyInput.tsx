@@ -13,6 +13,8 @@ interface DailyInputProps {
   loadingDays?: string[];
   errorDays?: { [date: string]: string };
   dataSource?: { [date: string]: 'manual' | 'api' };
+  onRefresh?: () => void;
+  onRefreshDay?: (date: string) => void;
 }
 
 export const DailyInput: React.FC<DailyInputProps> = ({
@@ -25,6 +27,8 @@ export const DailyInput: React.FC<DailyInputProps> = ({
   loadingDays = [],
   errorDays = {},
   dataSource = {},
+  onRefresh,
+  onRefreshDay,
 }) => {
   const [validationErrors, setValidationErrors] = useState<{
     [date: string]: { sales?: string; targetProducts?: string };
@@ -106,7 +110,20 @@ export const DailyInput: React.FC<DailyInputProps> = ({
 
   return (
     <div className={styles.container}>
-      <h2 className={styles.title}>Данные по рабочим дням</h2>
+      <div className={styles.header}>
+        <h2 className={styles.title}>Данные по рабочим дням</h2>
+        {mode === 'api' && onRefresh && (
+          <button
+            onClick={onRefresh}
+            className={styles.refreshButton}
+            disabled={loadingDays.length > 0 || workDays.length === 0}
+            title="Обновить все данные из API"
+          >
+            <span className={styles.refreshIcon}>↻</span>
+            Обновить всё
+          </button>
+        )}
+      </div>
       <div className={styles.daysList}>
         {workDays.map((date) => {
           const isLoading = loadingDays.includes(date);
@@ -118,16 +135,28 @@ export const DailyInput: React.FC<DailyInputProps> = ({
             <div key={date} className={styles.dayItem}>
               <div className={styles.dayHeader}>
                 <span className={styles.dateLabel}>{formatDate(date)}</span>
-                {isApiData && (
-                  <span className={styles.dataSource} title="Данные загружены из API">
-                    API
-                  </span>
-                )}
-                {source === 'manual' && mode === 'api' && (
-                  <span className={styles.dataSourceManual} title="Ручной ввод">
-                    Ручной
-                  </span>
-                )}
+                <div className={styles.dayHeaderActions}>
+                  {mode === 'api' && onRefreshDay && (
+                    <button
+                      onClick={() => onRefreshDay(date)}
+                      className={styles.refreshDayButton}
+                      disabled={isLoading}
+                      title="Обновить данные этого дня из API"
+                    >
+                      <span className={styles.refreshDayIcon}>↻</span>
+                    </button>
+                  )}
+                  {isApiData && (
+                    <span className={styles.dataSource} title="Данные загружены из API">
+                      API
+                    </span>
+                  )}
+                  {source === 'manual' && mode === 'api' && (
+                    <span className={styles.dataSourceManual} title="Ручной ввод">
+                      Ручной
+                    </span>
+                  )}
+                </div>
               </div>
               {isLoading && (
                 <div className={styles.loadingContainer}>

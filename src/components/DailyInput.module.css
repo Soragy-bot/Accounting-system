@@ -9,13 +9,103 @@
   animation: fadeIn 0.5s var(--ease-out);
 }
 
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
 .title {
-  margin: 0 0 1.5rem 0;
+  margin: 0;
   font-size: 1.25rem;
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--text-primary);
   transition: color 0.3s var(--ease-in-out);
+}
+
+.refreshButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--accent-primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s var(--ease-out);
+  white-space: nowrap;
+}
+
+.refreshButton:hover:not(:disabled) {
+  background: var(--accent-primary-hover, var(--accent-primary));
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.refreshButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.refreshButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.refreshIcon {
+  font-size: 1rem;
+  display: inline-block;
+  transition: transform 0.3s var(--ease-out);
+}
+
+.refreshButton:hover:not(:disabled) .refreshIcon {
+  transform: rotate(180deg);
+}
+
+.refreshDayButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s var(--ease-out);
+  color: var(--text-secondary);
+}
+
+.refreshDayButton:hover:not(:disabled) {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: white;
+  transform: scale(1.1);
+}
+
+.refreshDayButton:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.refreshDayButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.refreshDayIcon {
+  font-size: 0.875rem;
+  display: inline-block;
+  transition: transform 0.3s var(--ease-out);
+}
+
+.refreshDayButton:hover:not(:disabled) .refreshDayIcon {
+  transform: rotate(180deg);
 }
 
 .emptyMessage {
@@ -53,6 +143,13 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+  gap: 0.5rem;
+}
+
+.dayHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .dateLabel {

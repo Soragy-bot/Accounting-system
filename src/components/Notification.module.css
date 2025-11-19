@@ -22,6 +22,12 @@
   pointer-events: auto;
   animation: slideInRight 0.4s var(--ease-out);
   backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+}
+
+.notification.closing {
+  animation: slideOutRight 0.2s var(--ease-out) forwards;
 }
 
 @keyframes slideInRight {
@@ -33,6 +39,50 @@
     transform: translateX(0);
     opacity: 1;
   }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.progressBar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--accent-primary);
+  transition: width 0.05s linear;
+  border-radius: 0 0 12px 12px;
+}
+
+.notification.success .progressFill {
+  background: var(--accent-success);
+}
+
+.notification.error .progressFill {
+  background: var(--accent-danger);
+}
+
+.notification.warning .progressFill {
+  background: var(--accent-warning);
+}
+
+.notification.info .progressFill {
+  background: var(--accent-primary);
 }
 
 .notification.success {
@@ -90,6 +140,36 @@
   font-size: 14px;
   line-height: 1.5;
   word-wrap: break-word;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.actionButton {
+  padding: 6px 12px;
+  background: var(--accent-primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s var(--ease-out);
+  white-space: nowrap;
+}
+
+.actionButton:hover {
+  background: var(--accent-primary-hover, var(--accent-primary));
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.actionButton:active {
+  transform: translateY(0);
 }
 
 .closeButton {

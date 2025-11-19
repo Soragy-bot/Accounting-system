@@ -2,21 +2,27 @@ import React, { createContext, useContext, useState, useCallback, ReactNode } fr
 
 export type NotificationType = 'success' | 'error' | 'warning' | 'info';
 
+export interface NotificationAction {
+  label: string;
+  onClick: () => void;
+}
+
 export interface Notification {
   id: string;
   message: string;
   type: NotificationType;
   duration?: number;
+  action?: NotificationAction;
 }
 
 interface NotificationContextType {
   notifications: Notification[];
-  showNotification: (message: string, type?: NotificationType, duration?: number) => void;
+  showNotification: (message: string, type?: NotificationType, duration?: number, action?: NotificationAction) => void;
   removeNotification: (id: string) => void;
-  showSuccess: (message: string, duration?: number) => void;
-  showError: (message: string, duration?: number) => void;
-  showWarning: (message: string, duration?: number) => void;
-  showInfo: (message: string, duration?: number) => void;
+  showSuccess: (message: string, duration?: number, action?: NotificationAction) => void;
+  showError: (message: string, duration?: number, action?: NotificationAction) => void;
+  showWarning: (message: string, duration?: number, action?: NotificationAction) => void;
+  showInfo: (message: string, duration?: number, action?: NotificationAction) => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -31,51 +37,48 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
   }, []);
 
   const showNotification = useCallback(
-    (message: string, type: NotificationType = 'info', duration: number = DEFAULT_DURATION) => {
+    (message: string, type: NotificationType = 'info', duration: number = DEFAULT_DURATION, action?: NotificationAction) => {
       const id = `notification-${Date.now()}-${Math.random()}`;
       const notification: Notification = {
         id,
         message,
         type,
         duration,
+        action,
       };
 
       setNotifications((prev) => [...prev, notification]);
 
-      // Автоматически удаляем уведомление после указанной длительности
-      if (duration > 0) {
-        setTimeout(() => {
-          removeNotification(id);
-        }, duration);
-      }
+      // Автоматическое удаление теперь управляется компонентом NotificationItem
+      // для правильной работы прогресс-бара и предотвращения конфликтов таймеров
     },
     [removeNotification]
   );
 
   const showSuccess = useCallback(
-    (message: string, duration?: number) => {
-      showNotification(message, 'success', duration);
+    (message: string, duration?: number, action?: NotificationAction) => {
+      showNotification(message, 'success', duration, action);
     },
     [showNotification]
   );
 
   const showError = useCallback(
-    (message: string, duration?: number) => {
-      showNotification(message, 'error', duration);
+    (message: string, duration?: number, action?: NotificationAction) => {
+      showNotification(message, 'error', duration, action);
     },
     [showNotification]
   );
 
   const showWarning = useCallback(
-    (message: string, duration?: number) => {
-      showNotification(message, 'warning', duration);
+    (message: string, duration?: number, action?: NotificationAction) => {
+      showNotification(message, 'warning', duration, action);
     },
     [showNotification]
   );
 
   const showInfo = useCallback(
-    (message: string, duration?: number) => {
-      showNotification(message, 'info', duration);
+    (message: string, duration?: number, action?: NotificationAction) => {
+      showNotification(message, 'info', duration, action);
     },
     [showNotification]
   );

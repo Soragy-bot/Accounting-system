@@ -17,24 +17,29 @@ import { getMoyskladSettings, hasMoyskladSettings } from '../utils/moyskladStora
 import { calculateSalesByDay, calculateTargetProductsByDay, MoyskladApiError } from '../utils/moyskladApi';
 import { SalaryState, SalaryCalculation, MoyskladSettings } from '../types';
 import { logger } from '../utils/logger';
+import { useAutoSave } from '../hooks/useAutoSave';
+import { saveSalaryCalculatorDraft, loadSalaryCalculatorDraft, clearSalaryCalculatorDraft } from '../utils/draftStorage';
 import styles from './SalaryCalculator.module.css';
 
-export const SalaryCalculator: React.FC = () => {
-  const { showSuccess, showError } = useNotification();
-  const [state, setState] = useState<SalaryState>({
+const INITIAL_STATE: SalaryState = {
     dailyRate: 0,
     workDays: [],
     salesPercentage: 0,
     salesByDay: {},
     targetProductsCount: {},
     mode: 'manual',
-  });
+};
+
+export const SalaryCalculator: React.FC = () => {
+  const { showSuccess, showError, showInfo } = useNotification();
+  const [state, setState] = useState<SalaryState>(INITIAL_STATE);
   const [historyRefreshTrigger, setHistoryRefreshTrigger] = useState(0);
   const [moyskladSettings, setMoyskladSettings] = useState<MoyskladSettings | null>(null);
   const [loadingDays, setLoadingDays] = useState<string[]>([]);
   const [errorDays, setErrorDays] = useState<{ [date: string]: string }>({});
   const [dataSource, setDataSource] = useState<{ [date: string]: 'manual' | 'api' }>({});
   const loadedDaysRef = useRef<Set<string>>(new Set());
+  const initialStateRef = useRef<SalaryState>(INITIAL_STATE);
 
   const breakdown = useMemo(() => {
     return calculateSalaryBreakdown(state);
@@ -309,6 +314,78 @@ export const SalaryCalculator: React.FC = () => {
     }
   }, [state.mode]);
 
+  // Обработчик восстановления черновика
+  const handleRestore = useCallback((draft: SalaryState) => {
+    // Сохраняем текущее состояние и служебные состояния перед восстановлением
+    const previousState = { ...state };
+    const previousDataSource = { ...dataSource };
+    const previousErrorDays = { ...errorDays };
+    const previousLoadingDays = [...loadingDays];
+    
+    // Восстанавливаем черновик
+    setState(draft);
+    
+    // Сбрасываем служебные состояния при восстановлении
+    setDataSource({});
+    setErrorDays({});
+    setLoadingDays([]);
+    
+    // Если режим API и есть данные в черновике, отмечаем дни как загруженные,
+    // чтобы предотвратить повторную загрузку из API
+    if (draft.mode === 'api') {
+      loadedDaysRef.current.clear();
+      // Отмечаем дни, для которых есть данные, как уже загруженные
+      draft.workDays.forEach(date => {
+        if (draft.salesByDay[date] !== undefined || draft.targetProductsCount[date] !== undefined) {
+          loadedDaysRef.current.add(date);
+        }
+      });
+    } else {
+      loadedDaysRef.current.clear();
+    }
+    
+    // Показываем уведомление с возможностью отменить
+    showInfo('Черновик восстановлен', 7000, {
+      label: 'Отменить',
+      onClick: () => {
+        // Возвращаем предыдущее состояние
+        setState(previousState);
+        setDataSource(previousDataSource);
+        setErrorDays(previousErrorDays);
+        setLoadingDays(previousLoadingDays);
+        // Восстанавливаем loadedDaysRef для предыдущего состояния
+        loadedDaysRef.current.clear();
+        Object.keys(previousDataSource).forEach(date => {
+          if (previousDataSource[date] === 'api') {
+            loadedDaysRef.current.add(date);
+          }
+        });
+        clearSalaryCalculatorDraft();
+      },
+    });
+  }, [state, dataSource, errorDays, loadingDays, showInfo]);
+
+  // Обработчик отмены восстановления
+  const handleRestoreCancel = useCallback(() => {
+    setState(INITIAL_STATE);
+    initialStateRef.current = INITIAL_STATE;
+    setDataSource({});
+    setErrorDays({});
+    setLoadingDays([]);
+    loadedDaysRef.current.clear();
+  }, []);
+
+  // Автосохранение черновика (сохраняем только SalaryState, без служебных состояний)
+  const clearDraft = useAutoSave({
+    key: 'salary-calculator-draft',
+    state,
+    saveDraft: saveSalaryCalculatorDraft,
+    loadDraft: loadSalaryCalculatorDraft,
+    clearDraft: clearSalaryCalculatorDraft,
+    onRestore: handleRestore,
+    onRestoreCancel: handleRestoreCancel,
+  });
+
   const handleSave = useCallback(() => {
     const entry: SalaryCalculation = {
       id: Date.now().toString(),
@@ -323,7 +400,9 @@ export const SalaryCalculator: React.FC = () => {
     saveSalaryEntry(entry);
     setHistoryRefreshTrigger((prev) => prev + 1);
     showSuccess('Расчет зарплаты сохранен в историю!');
-  }, [state, breakdown, showSuccess]);
+    // Очищаем черновик после сохранения в историю
+    clearDraft();
+  }, [state, breakdown, showSuccess, clearDraft]);
 
   const handleLoadEntry = useCallback((entry: SalaryCalculation) => {
     // Игнорируем поле targetProductBonus, если оно есть в старых записях
@@ -343,20 +422,72 @@ export const SalaryCalculator: React.FC = () => {
 
   const handleReset = useCallback(() => {
     if (window.confirm('Вы уверены, что хотите сбросить все данные?')) {
-      setState((prev) => ({
-        dailyRate: 0,
-        workDays: [],
-        salesPercentage: 0,
-        salesByDay: {},
-        targetProductsCount: {},
-        mode: prev.mode || 'manual',
-      }));
+      const resetState = {
+        ...INITIAL_STATE,
+        mode: state.mode || 'manual',
+      };
+      setState(resetState);
+      initialStateRef.current = resetState;
       setDataSource({});
       setErrorDays({});
       setLoadingDays([]);
       loadedDaysRef.current.clear();
+      // Очищаем черновик при явном сбросе
+      clearDraft();
     }
-  }, []);
+  }, [state.mode, clearDraft]);
+
+  // Обработчик обновления данных из API для всех дней
+  const handleRefresh = useCallback(() => {
+    if (state.mode !== 'api' || state.workDays.length === 0 || !moyskladSettings?.storeId) {
+      return;
+    }
+
+    // Удаляем все выбранные дни из loadedDaysRef, чтобы они перезагрузились
+    state.workDays.forEach(date => {
+      loadedDaysRef.current.delete(date);
+    });
+
+    // Очищаем источники данных для выбранных дней
+    const newDataSource = { ...dataSource };
+    state.workDays.forEach(date => {
+      delete newDataSource[date];
+    });
+    setDataSource(newDataSource);
+
+    // Очищаем ошибки для выбранных дней
+    const newErrorDays = { ...errorDays };
+    state.workDays.forEach(date => {
+      delete newErrorDays[date];
+    });
+    setErrorDays(newErrorDays);
+
+    // Запускаем загрузку данных для всех выбранных дней
+    loadDataFromAPI(state.workDays);
+  }, [state.mode, state.workDays, moyskladSettings, dataSource, errorDays, loadDataFromAPI]);
+
+  // Обработчик обновления данных из API для одного дня
+  const handleRefreshDay = useCallback((date: string) => {
+    if (state.mode !== 'api' || !moyskladSettings?.storeId || !state.workDays.includes(date)) {
+      return;
+    }
+
+    // Удаляем день из loadedDaysRef, чтобы он перезагрузился
+    loadedDaysRef.current.delete(date);
+
+    // Очищаем источник данных для этого дня
+    const newDataSource = { ...dataSource };
+    delete newDataSource[date];
+    setDataSource(newDataSource);
+
+    // Очищаем ошибку для этого дня
+    const newErrorDays = { ...errorDays };
+    delete newErrorDays[date];
+    setErrorDays(newErrorDays);
+
+    // Запускаем загрузку данных для этого дня
+    loadDataFromAPI([date]);
+  }, [state.mode, state.workDays, moyskladSettings, dataSource, errorDays, loadDataFromAPI]);
 
   const handleExportToExcel = useCallback(() => {
     if (state.workDays.length === 0) {
@@ -415,6 +546,8 @@ export const SalaryCalculator: React.FC = () => {
           loadingDays={loadingDays}
           errorDays={errorDays}
           dataSource={dataSource}
+          onRefresh={handleRefresh}
+          onRefreshDay={handleRefreshDay}
         />
 
         {state.workDays.length > 0 && (

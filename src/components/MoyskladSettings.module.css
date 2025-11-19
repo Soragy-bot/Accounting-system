@@ -39,8 +39,7 @@
   transition: color 0.3s ease;
 }
 
-.input,
-.select {
+.input {
   padding: 0.75rem;
   border: 2px solid var(--input-border);
   border-radius: 10px;
@@ -51,7 +50,35 @@
   color: var(--text-primary);
 }
 
-.input:focus,
+.input:focus {
+  outline: none;
+  border-color: var(--input-border-focus);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  transform: scale(1.01);
+}
+
+.select {
+  padding: 0.75rem 2.5rem 0.75rem 0.75rem;
+  border: 2px solid var(--input-border);
+  border-radius: 10px;
+  font-size: 1rem;
+  transition: all 0.3s var(--ease-out);
+  width: 100%;
+  background: var(--input-bg);
+  color: var(--text-primary);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+  cursor: pointer;
+}
+
+.select:hover:not(:disabled) {
+  border-color: var(--input-border-focus);
+  background-color: var(--input-bg-hover, var(--input-bg));
+}
+
 .select:focus {
   outline: none;
   border-color: var(--input-border-focus);
@@ -62,6 +89,22 @@
 .select:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+}
+
+.select option {
+  padding: 0.5rem;
+  background: var(--input-bg);
+  color: var(--text-primary);
+}
+
+.select option:checked {
+  background: var(--accent-primary);
+  color: white;
+}
+
+.select option:hover {
+  background: var(--accent-primary-hover, var(--accent-primary));
 }
 
 .hint {
@@ -163,11 +206,33 @@
 }
 
 .status {
-  padding: 0.75rem;
-  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
   margin-bottom: 1rem;
   font-size: 0.9rem;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  animation: fadeIn 0.3s var(--ease-out);
+}
+
+.statusIcon {
+  font-size: 1rem;
+  display: inline-block;
+}
+
+.statusIconSpinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .statusSuccess {

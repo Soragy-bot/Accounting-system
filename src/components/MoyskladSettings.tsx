@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { MoyskladSettings, Store } from '../types';
 import { getMoyskladSettings, saveMoyskladSettings, getDefaultMoyskladSettings } from '../utils/moyskladStorage';
 import { getStores, testConnection, MoyskladApiError } from '../utils/moyskladApi';
 import { logger } from '../utils/logger';
+import { useNotification } from '../contexts/NotificationContext';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import styles from './MoyskladSettings.module.css';
 
@@ -11,140 +12,141 @@ interface MoyskladSettingsProps {
 }
 
 export const MoyskladSettingsComponent: React.FC<MoyskladSettingsProps> = ({ onSettingsChange }) => {
+    const { showSuccess, showError, showInfo } = useNotification();
     const [settings, setSettings] = useState<MoyskladSettings>(getDefaultMoyskladSettings());
     const [stores, setStores] = useState<Store[]>([]);
     const [loading, setLoading] = useState(false);
     const [testing, setTesting] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState<string | null>(null);
     const [connectionStatus, setConnectionStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+    const isInitialLoadRef = useRef(true);
+    const hasLoadedRef = useRef(false);
+
+    // Загрузка списка точек продажи
+    const loadStores = useCallback(async (token: string, showNotification = false) => {
+        try {
+            setLoading(true);
+            const storesList = await getStores(token);
+            setStores(storesList);
+            // Показываем уведомление только если явно запрошено (при нажатии кнопки "Повторить попытку")
+            if (showNotification && storesList.length > 0) {
+                showSuccess(`Загружено точек продажи: ${storesList.length}`);
+            }
+        } catch (err) {
+            logger.error('Ошибка при загрузке точек продажи:', err);
+            // Показываем ошибку если явно запрошено или если это не первая автоматическая загрузка
+            if (showNotification || !isInitialLoadRef.current) {
+            if (err instanceof MoyskladApiError) {
+                    showError(err.message);
+            } else {
+                    showError('Не удалось загрузить точки продажи');
+                }
+            }
+        } finally {
+            setLoading(false);
+        }
+    }, [showSuccess, showError]);
 
     // Загрузка сохраненных настроек
     useEffect(() => {
+        // Защита от повторных вызовов
+        if (hasLoadedRef.current) return;
+        hasLoadedRef.current = true;
+
         const savedSettings = getMoyskladSettings();
         if (savedSettings) {
             setSettings(savedSettings);
             onSettingsChange(savedSettings);
 
-            // Загружаем списки при наличии токена
+            // Загружаем списки при наличии токена (без уведомления при первой загрузке)
             if (savedSettings.accessToken) {
-                loadStores(savedSettings.accessToken);
+                loadStores(savedSettings.accessToken, false);
             }
         }
-    }, [onSettingsChange]);
-
-    // Загрузка списка точек продажи
-    const loadStores = useCallback(async (token: string) => {
-        try {
-            setLoading(true);
-            setError(null);
-            const storesList = await getStores(token);
-            setStores(storesList);
-        } catch (err) {
-            logger.error('Ошибка при загрузке точек продажи:', err);
-            if (err instanceof MoyskladApiError) {
-                setError(err.message);
-            } else {
-                setError('Не удалось загрузить точки продажи');
-            }
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+        isInitialLoadRef.current = false;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Загружаем только один раз при монтировании
 
     // Обработка изменения токена
     const handleTokenChange = useCallback((token: string) => {
         const newSettings = { ...settings, accessToken: token };
         setSettings(newSettings);
-        setError(null);
-        setSuccess(null);
         setConnectionStatus('idle');
 
-        // Если токен есть, загружаем списки
+        // Автоматически сохраняем настройки
         if (token) {
-            loadStores(token);
+            try {
+                saveMoyskladSettings(newSettings);
+                onSettingsChange(newSettings);
+            } catch (err) {
+                logger.error('Ошибка при сохранении настроек:', err);
+            }
+            loadStores(token, false); // Не показываем уведомление при автоматической загрузке
         } else {
             setStores([]);
+            // Очищаем настройки если токен удален
+            try {
+                saveMoyskladSettings(newSettings);
+                onSettingsChange(newSettings);
+            } catch (err) {
+                logger.error('Ошибка при сохранении настроек:', err);
+            }
         }
-    }, [settings, loadStores]);
+    }, [settings, loadStores, onSettingsChange]);
 
     // Обработка изменения точки продажи
     const handleStoreChange = useCallback((storeId: string) => {
         const newSettings = { ...settings, storeId: storeId || null };
         setSettings(newSettings);
-        setError(null);
-    }, [settings]);
+        
+        // Автоматически сохраняем настройки
+        try {
+            saveMoyskladSettings(newSettings);
+            onSettingsChange(newSettings);
+            if (storeId) {
+                showSuccess('Точка продажи выбрана');
+            }
+        } catch (err) {
+            logger.error('Ошибка при сохранении настроек:', err);
+            showError('Не удалось сохранить настройки');
+        }
+    }, [settings, onSettingsChange, showSuccess, showError]);
 
 
     // Тест подключения
     const handleTestConnection = useCallback(async () => {
         if (!settings.accessToken) {
-            setError('Введите токен доступа');
+            showError('Введите токен доступа');
             return;
         }
 
         setTesting(true);
-        setError(null);
-        setSuccess(null);
         setConnectionStatus('testing');
 
         try {
             const isConnected = await testConnection(settings.accessToken);
             if (isConnected) {
-                setSuccess('Подключение успешно установлено');
                 setConnectionStatus('success');
+                showSuccess('Подключение успешно установлено');
                 // Загружаем списки после успешного теста
-                await loadStores(settings.accessToken);
+                await loadStores(settings.accessToken, false);
             } else {
-                setError('Не удалось установить подключение');
                 setConnectionStatus('error');
+                showError('Не удалось установить подключение');
             }
         } catch (err) {
             logger.error('Ошибка при тесте подключения:', err);
-            if (err instanceof MoyskladApiError) {
-                setError(err.message);
-            } else {
-                setError('Ошибка при проверке подключения');
-            }
             setConnectionStatus('error');
+            if (err instanceof MoyskladApiError) {
+                showError(err.message);
+            } else {
+                showError('Ошибка при проверке подключения');
+            }
         } finally {
             setTesting(false);
         }
-    }, [settings.accessToken, loadStores]);
+    }, [settings.accessToken, loadStores, showSuccess, showError]);
 
-    // Сохранение настроек
-    const handleSave = useCallback(() => {
-        if (!settings.accessToken) {
-            setError('Введите токен доступа');
-            return;
-        }
 
-        if (!settings.storeId) {
-            setError('Выберите розничную точку продажи');
-            return;
-        }
-
-        try {
-            saveMoyskladSettings(settings);
-            setSuccess('Настройки сохранены');
-            setError(null);
-            onSettingsChange(settings);
-        } catch (err) {
-            logger.error('Ошибка при сохранении настроек:', err);
-            setError('Не удалось сохранить настройки');
-        }
-    }, [settings, onSettingsChange]);
-
-    // Очистка сообщений об ошибках/успехе
-    useEffect(() => {
-        if (error || success) {
-            const timer = setTimeout(() => {
-                setError(null);
-                setSuccess(null);
-            }, 5000);
-            return () => clearTimeout(timer);
-        }
-    }, [error, success]);
 
     return (
         <div className={styles.container}>
@@ -178,23 +180,10 @@ export const MoyskladSettingsComponent: React.FC<MoyskladSettingsProps> = ({ onS
             </div>
 
             {connectionStatus === 'testing' && (
-                <div className={styles.status}>Проверка подключения...</div>
-            )}
-
-            {connectionStatus === 'success' && (
-                <div className={`${styles.status} ${styles.statusSuccess}`}>✓ Подключение установлено</div>
-            )}
-
-            {connectionStatus === 'error' && error && (
-                <div className={`${styles.status} ${styles.statusError}`}>✗ {error}</div>
-            )}
-
-            {error && connectionStatus !== 'error' && (
-                <div className={`${styles.status} ${styles.statusError}`}>✗ {error}</div>
-            )}
-
-            {success && (
-                <div className={`${styles.status} ${styles.statusSuccess}`}>✓ {success}</div>
+                <div className={styles.status}>
+                    <span className={`${styles.statusIcon} ${styles.statusIconSpinning}`}>⟳</span>
+                    Проверка подключения...
+                </div>
             )}
 
             <div className={styles.section}>
@@ -220,28 +209,17 @@ export const MoyskladSettingsComponent: React.FC<MoyskladSettingsProps> = ({ onS
                         <span className={styles.loadingText}>Загрузка точек продажи...</span>
                     </div>
                 )}
-                {error && connectionStatus === 'error' && !loading && (
+                {connectionStatus === 'error' && !loading && (
                     <div className={styles.retryContainer}>
                         <button
                             type="button"
-                            onClick={() => settings.accessToken && loadStores(settings.accessToken)}
+                            onClick={() => settings.accessToken && loadStores(settings.accessToken, true)}
                             className={styles.retryButton}
                         >
                             Повторить попытку
                         </button>
                     </div>
                 )}
-            </div>
-
-            <div className={styles.actions}>
-                <button
-                    type="button"
-                    onClick={handleSave}
-                    disabled={loading || testing || !settings.accessToken || !settings.storeId}
-                    className={styles.saveButton}
-                >
-                    Сохранить настройки
-                </button>
             </div>
         </div>
     );
