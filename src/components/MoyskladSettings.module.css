@@ -1,17 +1,21 @@
 .container {
   background: var(--card-bg);
   padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: var(--shadow-sm);
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
   margin-bottom: 1.5rem;
-  transition: background 0.3s ease, box-shadow 0.3s ease;
+  transition: all 0.3s var(--ease-in-out);
+  border: 1px solid var(--card-border);
+  animation: fadeIn 0.5s var(--ease-out);
 }
 
 .title {
   margin: 0 0 1.5rem 0;
   font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   color: var(--text-primary);
-  transition: color 0.3s ease;
+  transition: color 0.3s var(--ease-in-out);
 }
 
 .section {
@@ -39,9 +43,9 @@
 .select {
   padding: 0.75rem;
   border: 2px solid var(--input-border);
-  border-radius: 4px;
+  border-radius: 10px;
   font-size: 1rem;
-  transition: border-color 0.2s, background 0.3s ease;
+  transition: all 0.3s var(--ease-out);
   width: 100%;
   background: var(--input-bg);
   color: var(--text-primary);
@@ -51,6 +55,8 @@
 .select:focus {
   outline: none;
   border-color: var(--input-border-focus);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  transform: scale(1.01);
 }
 
 .select:disabled {
@@ -85,18 +91,21 @@
 .retryButton {
   padding: 0.5rem 1rem;
   border: 1px solid var(--accent-primary);
-  border-radius: 4px;
+  border-radius: 8px;
   background: transparent;
   color: var(--accent-primary);
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s var(--ease-out);
+  box-shadow: var(--shadow-sm);
 }
 
 .retryButton:hover {
   background: var(--accent-primary);
   color: white;
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: var(--shadow-md);
 }
 
 .actions {
@@ -110,12 +119,13 @@
 .saveButton {
   padding: 0.75rem 1.5rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 10px;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s var(--ease-out);
   white-space: nowrap;
+  box-shadow: var(--shadow-md);
 }
 
 .testButton {
@@ -125,13 +135,14 @@
 
 .testButton:hover:not(:disabled) {
   background: var(--accent-primary-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: var(--shadow-lg);
 }
 
 .testButton:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
 }
 
 .saveButton {
@@ -141,13 +152,14 @@
 
 .saveButton:hover:not(:disabled) {
   background: var(--accent-success-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: var(--shadow-lg);
 }
 
 .saveButton:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
 }
 
 .status {

@@ -8,7 +8,23 @@
 .label {
   font-size: 1rem;
   font-weight: 600;
+  color: white;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  transition: color 0.3s var(--ease-in-out), text-shadow 0.3s var(--ease-in-out);
+}
+
+/* Для темной темы используем стандартный цвет текста */
+[data-theme='dark'] .label {
   color: var(--text-primary);
+  text-shadow: none;
+}
+
+/* Учитываем системную тему */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .label {
+    color: var(--text-primary);
+    text-shadow: none;
+  }
 }
 
 .toggle {
@@ -16,36 +32,40 @@
   gap: 0.5rem;
   background: var(--card-bg);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 0.25rem;
+  box-shadow: var(--shadow-sm);
 }
 
 .button {
   padding: 0.5rem 1rem;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   background: transparent;
   color: var(--text-secondary);
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s var(--ease-out);
   white-space: nowrap;
 }
 
 .button:hover {
   background: var(--entry-card-hover);
   color: var(--text-primary);
+  transform: scale(1.05);
 }
 
 .button.active {
   background: var(--button-bg);
   color: white;
   font-weight: 600;
+  box-shadow: var(--shadow-sm);
 }
 
 .button.active:hover {
   background: var(--button-bg-hover);
+  transform: scale(1.05);
 }
 
 @media (max-width: 600px) {

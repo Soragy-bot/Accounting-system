@@ -1,17 +1,21 @@
 .container {
   background: var(--card-bg);
   padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: var(--shadow-sm);
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
   margin-bottom: 1.5rem;
-  transition: background 0.3s ease, box-shadow 0.3s ease;
+  transition: all 0.3s var(--ease-in-out);
+  border: 1px solid var(--card-border);
+  animation: fadeIn 0.5s var(--ease-out);
 }
 
 .title {
   margin: 0 0 1.5rem 0;
   font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   color: var(--text-primary);
-  transition: color 0.3s ease;
+  transition: color 0.3s var(--ease-in-out);
 }
 
 .emptyMessage {
@@ -30,11 +34,18 @@
 }
 
 .dayItem {
-  padding: 1rem;
+  padding: 1.25rem;
   border: 1px solid var(--card-border);
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--entry-card-bg);
-  transition: background 0.2s, border-color 0.3s ease;
+  transition: all 0.3s var(--ease-out);
+  animation: fadeIn 0.4s var(--ease-out) both;
+}
+
+.dayItem:hover {
+  transform: translateX(4px);
+  box-shadow: var(--shadow-sm);
+  border-color: var(--accent-primary);
 }
 
 .dayHeader {
@@ -127,9 +138,9 @@
   flex: 1;
   padding: 0.75rem;
   border: 2px solid var(--input-border);
-  border-radius: 4px;
+  border-radius: 10px;
   font-size: 1rem;
-  transition: border-color 0.2s, background 0.3s ease;
+  transition: all 0.3s var(--ease-out);
   width: 100%;
   background: var(--input-bg);
   color: var(--text-primary);
@@ -138,6 +149,8 @@
 .input:focus {
   outline: none;
   border-color: var(--input-border-focus);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  transform: scale(1.01);
 }
 
 .input:disabled {

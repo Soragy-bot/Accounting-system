@@ -2,7 +2,8 @@
   min-height: 100vh;
   background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
   padding: 2rem 1rem;
-  transition: background 0.3s ease;
+  transition: background 0.4s var(--ease-in-out);
+  animation: fadeIn 0.6s var(--ease-out);
 }
 
 .header {
@@ -31,17 +32,21 @@
   margin: 0 0 1rem 0;
   color: white;
   font-size: 3rem;
-  font-weight: bold;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-  transition: color 0.3s ease;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: color 0.3s var(--ease-in-out);
+  animation: fadeIn 0.8s var(--ease-out) 0.1s both;
 }
 
 .subtitle {
   margin: 0;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 1.2rem;
-  font-weight: 300;
-  transition: color 0.3s ease;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 1.25rem;
+  font-weight: 400;
+  line-height: 1.6;
+  transition: color 0.3s var(--ease-in-out);
+  animation: fadeIn 0.8s var(--ease-out) 0.2s both;
 }
 
 .main {
@@ -62,16 +67,32 @@
   gap: 1.5rem;
   padding: 2rem;
   background: var(--card-bg);
-  border-radius: 16px;
+  border-radius: 20px;
   text-decoration: none;
   box-shadow: var(--shadow-lg);
-  transition: transform 0.2s, box-shadow 0.2s, background 0.3s ease;
+  transition: all 0.3s var(--ease-out);
   cursor: pointer;
+  border: 1px solid transparent;
+  animation: fadeInScale 0.5s var(--ease-out) both;
+}
+
+.primaryButton:nth-child(1) {
+  animation-delay: 0.3s;
+}
+
+.primaryButton:nth-child(2) {
+  animation-delay: 0.4s;
 }
 
 .primaryButton:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-xl);
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: var(--shadow-2xl);
+  border-color: var(--accent-primary);
+}
+
+.primaryButton:active {
+  transform: translateY(-2px) scale(1);
+  transition: all 0.15s var(--ease-out);
 }
 
 .buttonIcon {
@@ -89,31 +110,36 @@
 
 .buttonTitle {
   font-size: 1.8rem;
-  font-weight: bold;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   color: var(--text-primary);
-  transition: color 0.3s ease;
+  transition: color 0.3s var(--ease-in-out);
 }
 
 .buttonDescription {
   font-size: 1rem;
+  line-height: 1.5;
   color: var(--text-secondary);
-  transition: color 0.3s ease;
+  transition: color 0.3s var(--ease-in-out);
 }
 
 .recentSection {
   background: var(--card-bg);
-  border-radius: 16px;
+  border-radius: 20px;
   padding: 2rem;
   box-shadow: var(--shadow-lg);
-  transition: background 0.3s ease, box-shadow 0.3s ease;
+  transition: all 0.3s var(--ease-in-out);
+  animation: fadeIn 0.6s var(--ease-out) 0.5s both;
+  border: 1px solid var(--card-border);
 }
 
 .sectionTitle {
   margin: 0 0 1.5rem 0;
   font-size: 1.5rem;
   color: var(--text-primary);
-  font-weight: 600;
-  transition: color 0.3s ease;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  transition: color 0.3s var(--ease-in-out);
 }
 
 .entriesList {
@@ -124,15 +150,39 @@
 }
 
 .entryCard {
-  padding: 1rem;
+  padding: 1.25rem;
   border: 1px solid var(--card-border);
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--entry-card-bg);
-  transition: background 0.2s, border-color 0.3s ease;
+  transition: all 0.3s var(--ease-out);
+  animation: fadeIn 0.4s var(--ease-out) both;
+}
+
+.entryCard:nth-child(1) {
+  animation-delay: 0.6s;
+}
+
+.entryCard:nth-child(2) {
+  animation-delay: 0.65s;
+}
+
+.entryCard:nth-child(3) {
+  animation-delay: 0.7s;
+}
+
+.entryCard:nth-child(4) {
+  animation-delay: 0.75s;
+}
+
+.entryCard:nth-child(5) {
+  animation-delay: 0.8s;
 }
 
 .entryCard:hover {
   background: var(--entry-card-hover);
+  transform: translateX(4px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--accent-primary);
 }
 
 .entryHeader {
@@ -172,25 +222,31 @@
 }
 
 .viewAllLink {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   color: var(--accent-primary);
   text-decoration: none;
   font-weight: 600;
-  transition: color 0.2s;
+  transition: all 0.3s var(--ease-out);
+  padding: 0.5rem 0;
 }
 
 .viewAllLink:hover {
   color: var(--accent-primary-hover);
-  text-decoration: underline;
+  transform: translateX(4px);
+  gap: 0.75rem;
 }
 
 .emptyState {
   text-align: center;
   padding: 4rem 2rem;
   background: var(--card-bg);
-  border-radius: 16px;
+  border-radius: 20px;
   box-shadow: var(--shadow-lg);
-  transition: background 0.3s ease, box-shadow 0.3s ease;
+  transition: all 0.3s var(--ease-in-out);
+  animation: fadeInScale 0.6s var(--ease-out) 0.3s both;
+  border: 1px solid var(--card-border);
 }
 
 .emptyIcon {

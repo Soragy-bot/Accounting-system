@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTheme } from '../contexts/ThemeContext';
+import { ColorPaletteSelector } from './ColorPaletteSelector';
 import styles from './ThemeToggle.module.css';
 
 export const ThemeToggle: React.FC = () => {
@@ -19,15 +20,18 @@ export const ThemeToggle: React.FC = () => {
   };
 
   return (
-    <button
-      className={styles.toggleButton}
-      onClick={handleToggle}
-      aria-label={`Тема: ${getLabel()}. Нажмите для переключения`}
-      title={`Текущая тема: ${getLabel()}. Нажмите для переключения`}
-    >
-      <span className={styles.icon}>{getIcon()}</span>
-      <span className={styles.label}>{getLabel()}</span>
-    </button>
+    <div className={styles.container}>
+      <button
+        className={styles.toggleButton}
+        onClick={handleToggle}
+        aria-label={`Тема: ${getLabel()}. Нажмите для переключения`}
+        title={`Текущая тема: ${getLabel()}. Нажмите для переключения`}
+      >
+        <span className={styles.icon}>{getIcon()}</span>
+        <span className={styles.label}>{getLabel()}</span>
+      </button>
+      <ColorPaletteSelector />
+    </div>
   );
 };
 

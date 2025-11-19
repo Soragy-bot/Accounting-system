@@ -12,12 +12,13 @@
   min-width: 150px;
   padding: 1rem;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s, background 0.3s ease, opacity 0.2s;
+  transition: all 0.3s var(--ease-out);
   color: white;
+  box-shadow: var(--shadow-md);
 }
 
 .saveButton {
@@ -27,29 +28,31 @@
 
 .saveButton:hover:not(:disabled) {
   background: var(--accent-success-hover);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: var(--shadow-lg);
 }
 
 .saveButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
 .exportButton {
-  background: var(--accent-primary, #4a90e2);
+  background: var(--accent-primary);
   color: white;
 }
 
 .exportButton:hover:not(:disabled) {
-  background: var(--accent-primary-hover, #357abd);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  background: var(--accent-primary-hover);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: var(--shadow-lg);
 }
 
 .exportButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
 .resetButton {
@@ -59,14 +62,14 @@
 
 .resetButton:hover {
   background: var(--accent-danger-hover);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: var(--shadow-lg);
 }
 
 .saveButton:active:not(:disabled),
 .exportButton:active:not(:disabled),
 .resetButton:active {
-  transform: translateY(0);
+  transform: translateY(-1px) scale(1);
 }
 
 @media (max-width: 600px) {

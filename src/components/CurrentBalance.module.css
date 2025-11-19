@@ -1,29 +1,35 @@
 .container {
   background: var(--card-bg);
   padding: 2rem;
-  border-radius: 8px;
-  box-shadow: var(--shadow-sm);
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
   margin-bottom: 1.5rem;
   text-align: center;
-  transition: background 0.3s ease, box-shadow 0.3s ease;
+  transition: all 0.3s var(--ease-in-out);
+  border: 1px solid var(--card-border);
+  animation: fadeInScale 0.5s var(--ease-out);
 }
 
 .title {
   margin: 0 0 1rem 0;
   font-size: 1.25rem;
+  font-weight: 600;
   color: var(--text-primary);
-  transition: color 0.3s ease;
+  transition: color 0.3s var(--ease-in-out);
+  letter-spacing: -0.01em;
 }
 
 .balance {
   font-size: 3rem;
-  font-weight: bold;
+  font-weight: 800;
+  letter-spacing: -0.03em;
   margin: 1rem 0;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  transition: color 0.3s ease;
+  transition: all 0.4s var(--ease-out);
+  animation: fadeInScale 0.6s var(--ease-out) 0.2s both;
 }
 
 .positive {
@@ -56,7 +62,8 @@
   font-size: 1rem;
   color: var(--text-secondary);
   font-weight: 500;
-  transition: color 0.3s ease;
+  transition: color 0.3s var(--ease-in-out);
+  line-height: 1.5;
 }
 
 @media (max-width: 600px) {

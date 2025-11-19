@@ -1,0 +1,126 @@
+.container {
+  position: relative;
+  display: inline-block;
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s var(--ease-out);
+  backdrop-filter: blur(10px);
+  white-space: nowrap;
+}
+
+.trigger:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.trigger:active {
+  transform: translateY(0) scale(1);
+}
+
+.icon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.label {
+  font-size: 0.9rem;
+}
+
+.arrow {
+  font-size: 0.7rem;
+  margin-left: 0.25rem;
+  transition: transform 0.3s var(--ease-out);
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-xl);
+  min-width: 180px;
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 1000;
+  animation: fadeInScale 0.2s var(--ease-out);
+  overflow-x: hidden;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s var(--ease-out);
+  text-align: left;
+}
+
+.option:hover {
+  background: var(--entry-card-hover);
+}
+
+.option.active {
+  background: var(--entry-card-bg);
+  font-weight: 600;
+  color: var(--accent-primary);
+}
+
+.optionIcon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.optionLabel {
+  flex: 1;
+}
+
+.checkmark {
+  color: var(--accent-primary);
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+@media (max-width: 600px) {
+  .trigger {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+  }
+
+  .label {
+    display: none;
+  }
+
+  .icon {
+    font-size: 1.3rem;
+  }
+
+  .dropdown {
+    right: auto;
+    left: 0;
+    min-width: 160px;
+  }
+}
+

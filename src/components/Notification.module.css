@@ -17,14 +17,14 @@
   padding: 16px;
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: 8px;
-  box-shadow: var(--shadow-lg);
+  border-radius: 12px;
+  box-shadow: var(--shadow-xl);
   pointer-events: auto;
-  animation: slideIn 0.3s ease-out;
+  animation: slideInRight 0.4s var(--ease-out);
   backdrop-filter: blur(10px);
 }
 
-@keyframes slideIn {
+@keyframes slideInRight {
   from {
     transform: translateX(100%);
     opacity: 0;
@@ -105,8 +105,8 @@
   font-size: 20px;
   font-weight: bold;
   cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.2s;
+  border-radius: 6px;
+  transition: all 0.3s var(--ease-out);
   padding: 0;
   line-height: 1;
 }
@@ -114,10 +114,11 @@
 .closeButton:hover {
   background: rgba(0, 0, 0, 0.1);
   color: var(--text-primary);
+  transform: scale(1.1);
 }
 
 .closeButton:active {
-  transform: scale(0.95);
+  transform: scale(0.9);
 }
 
 @media (max-width: 600px) {
