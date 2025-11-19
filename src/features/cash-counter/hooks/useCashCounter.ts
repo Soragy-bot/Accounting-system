@@ -45,6 +45,31 @@ export const useCashCounter = () => {
     setState((prev) => ({ ...prev, coinsKopecks }));
   }, []);
 
+  // Проверка наличия данных в черновике
+  const hasDraftData = useCallback((draft: CashState): boolean => {
+    // Проверяем начальную сумму
+    if (draft.initialAmount !== 0) {
+      return true;
+    }
+    
+    // Проверяем наличие купюр
+    if (Object.keys(draft.bills).length > 0) {
+      return true;
+    }
+    
+    // Проверяем наличие рублей в монетах
+    if (Object.keys(draft.coinsRubles).length > 0) {
+      return true;
+    }
+    
+    // Проверяем наличие копеек в монетах
+    if (Object.keys(draft.coinsKopecks).length > 0) {
+      return true;
+    }
+    
+    return false;
+  }, []);
+
   // Обработчик восстановления черновика
   const handleRestore = useCallback((draft: CashState) => {
     // Сохраняем текущее состояние перед восстановлением
@@ -53,16 +78,18 @@ export const useCashCounter = () => {
     // Восстанавливаем черновик
     setState(draft);
     
-    // Показываем уведомление с возможностью отменить (автоматически исчезнет через 7 секунд)
-    showInfo('Черновик восстановлен', 7000, {
-      label: 'Отменить',
-      onClick: () => {
-        // Возвращаем предыдущее состояние
-        setState(previousState);
-        clearCashCounterDraft();
-      },
-    });
-  }, [state, showInfo]);
+    // Показываем уведомление только если есть данные в черновике
+    if (hasDraftData(draft)) {
+      showInfo('Черновик восстановлен', 7000, {
+        label: 'Отменить',
+        onClick: () => {
+          // Возвращаем предыдущее состояние
+          setState(previousState);
+          clearCashCounterDraft();
+        },
+      });
+    }
+  }, [state, showInfo, hasDraftData]);
 
   // Обработчик отмены восстановления
   const handleRestoreCancel = useCallback(() => {

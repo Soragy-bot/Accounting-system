@@ -315,6 +315,31 @@ export const SalaryCalculator: React.FC = () => {
     }
   }, [state.mode]);
 
+  // Проверка наличия данных в черновике
+  const hasDraftData = useCallback((draft: SalaryState): boolean => {
+    // Проверяем наличие рабочих дней
+    if (draft.workDays.length > 0) {
+      return true;
+    }
+    
+    // Проверяем наличие данных о продажах
+    if (Object.keys(draft.salesByDay).length > 0) {
+      return true;
+    }
+    
+    // Проверяем наличие данных о целевых товарах
+    if (Object.keys(draft.targetProductsCount).length > 0) {
+      return true;
+    }
+    
+    // Проверяем наличие ставки или процента с продаж
+    if (draft.dailyRate !== 0 || draft.salesPercentage !== 0) {
+      return true;
+    }
+    
+    return false;
+  }, []);
+
   // Обработчик восстановления черновика
   const handleRestore = useCallback((draft: SalaryState) => {
     // Сохраняем текущее состояние и служебные состояния перед восстановлением
@@ -345,26 +370,28 @@ export const SalaryCalculator: React.FC = () => {
       loadedDaysRef.current.clear();
     }
     
-    // Показываем уведомление с возможностью отменить
-    showInfo('Черновик восстановлен', 7000, {
-      label: 'Отменить',
-      onClick: () => {
-        // Возвращаем предыдущее состояние
-        setState(previousState);
-        setDataSource(previousDataSource);
-        setErrorDays(previousErrorDays);
-        setLoadingDays(previousLoadingDays);
-        // Восстанавливаем loadedDaysRef для предыдущего состояния
-        loadedDaysRef.current.clear();
-        Object.keys(previousDataSource).forEach(date => {
-          if (previousDataSource[date] === 'api') {
-            loadedDaysRef.current.add(date);
-          }
-        });
-        clearSalaryCalculatorDraft();
-      },
-    });
-  }, [state, dataSource, errorDays, loadingDays, showInfo]);
+    // Показываем уведомление только если есть данные в черновике
+    if (hasDraftData(draft)) {
+      showInfo('Черновик восстановлен', 7000, {
+        label: 'Отменить',
+        onClick: () => {
+          // Возвращаем предыдущее состояние
+          setState(previousState);
+          setDataSource(previousDataSource);
+          setErrorDays(previousErrorDays);
+          setLoadingDays(previousLoadingDays);
+          // Восстанавливаем loadedDaysRef для предыдущего состояния
+          loadedDaysRef.current.clear();
+          Object.keys(previousDataSource).forEach(date => {
+            if (previousDataSource[date] === 'api') {
+              loadedDaysRef.current.add(date);
+            }
+          });
+          clearSalaryCalculatorDraft();
+        },
+      });
+    }
+  }, [state, dataSource, errorDays, loadingDays, showInfo, hasDraftData]);
 
   // Обработчик отмены восстановления
   const handleRestoreCancel = useCallback(() => {
