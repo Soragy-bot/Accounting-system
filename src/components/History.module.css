@@ -113,9 +113,9 @@
 }
 
 .entry:hover {
-  transform: translateX(4px);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
   border-color: var(--accent-primary);
+  background: var(--entry-card-hover, var(--entry-card-bg));
 }
 
 .entryHeader {
