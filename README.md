@@ -30,17 +30,81 @@
 npm install
 ```
 
-## Запуск
+## Настройка переменных окружения
+
+Создайте файл `.env` в корне проекта на основе `.env.example`:
 
 ```bash
-# Режим разработки
+cp .env.example .env
+```
+
+Заполните следующие переменные:
+
+### Обязательные переменные:
+
+- `DATABASE_URL` - строка подключения к PostgreSQL
+- `JWT_SECRET` - секретный ключ для JWT токенов (минимум 32 символа)
+- `JWT_REFRESH_SECRET` - секретный ключ для refresh токенов (минимум 32 символа)
+- `ENCRYPTION_KEY` - ключ для шифрования токена МойСклад (32 символа)
+- `TELEGRAM_BOT_TOKEN` - токен Telegram бота (получить у @BotFather)
+- `TELEGRAM_CLIENT_ID` - ID Telegram приложения (bot_id от @BotFather)
+- `TELEGRAM_CLIENT_SECRET` - секрет Telegram приложения
+- `TELEGRAM_DOMAIN` - домен вашего приложения для Telegram OAuth (обязательно)
+- `FRONTEND_URL` - URL фронтенда для редиректа после авторизации
+
+### Настройка Telegram OAuth:
+
+1. Создайте бота через [@BotFather](https://t.me/BotFather)
+2. Получите токен бота (`TELEGRAM_BOT_TOKEN`)
+3. Зарегистрируйте домен в настройках бота:
+   - Откройте [@BotFather](https://t.me/BotFather) в Telegram
+   - Отправьте команду `/newapp` или `/editapp`
+   - Выберите вашего бота
+   - Укажите домен вашего сайта (например, `example.com`)
+   - Telegram вернет вам `bot_id`, который нужно использовать как `TELEGRAM_CLIENT_ID`
+4. Настройте переменные окружения в `.env`:
+   ```env
+   TELEGRAM_BOT_TOKEN=ваш_токен_бота
+   TELEGRAM_CLIENT_ID=bot_id_от_BotFather
+   TELEGRAM_DOMAIN=example.com
+   FRONTEND_URL=https://example.com
+   ```
+
+### Настройка базы данных:
+
+1. Убедитесь, что PostgreSQL запущен
+2. При первом запуске миграции применятся автоматически
+3. Или запустите вручную: `npm run migrate`
+
+## Запуск
+
+### Разработка
+
+```bash
+# Запуск PostgreSQL через Docker Compose
+docker-compose up -d postgres
+
+# Применение миграций БД
+npm run migrate
+
+# Запуск фронтенда (dev сервер)
 npm run dev
 
-# Сборка для производства
+# Запуск бэкенда (в отдельном терминале)
+npm start
+```
+
+### Production
+
+```bash
+# Сборка фронтенда
 npm run build
 
-# Просмотр собранной версии
-npm run preview
+# Запуск через Docker Compose (включает PostgreSQL и приложение)
+docker-compose up -d
+
+# Или запуск только приложения
+npm start
 ```
 
 ## Структура проекта

@@ -1,10 +1,10 @@
 import { useState, useCallback, useMemo, useRef } from 'react';
 import { useNotification } from '../../../contexts/NotificationContext';
-import { calculateTotal } from '../services/cashCalculations';
-import { saveHistoryEntry } from '../services/cashStorage';
+import { cashApi } from '../../../shared/api/cash/api';
 import { CashState, CashEntry, MoneyCount } from '../types';
 import { useAutoSave } from '../../../shared/hooks/useAutoSave';
 import { saveCashCounterDraft, loadCashCounterDraft, clearCashCounterDraft } from '../services/cashDraftStorage';
+import { BILLS, COINS_RUBLES, COINS_KOPECKS } from '../constants';
 
 const INITIAL_STATE: CashState = {
   initialAmount: 0,
@@ -18,6 +18,28 @@ export const useCashCounter = () => {
   const [state, setState] = useState<CashState>(INITIAL_STATE);
   const [historyRefreshTrigger, setHistoryRefreshTrigger] = useState(0);
   const initialStateRef = useRef<CashState>(INITIAL_STATE);
+
+  // Локальный расчет общей суммы (та же логика что на бэкенде)
+  const calculateTotal = (initialAmount: number, bills: MoneyCount, coinsRubles: MoneyCount, coinsKopecks: MoneyCount): number => {
+    let actualAmount = 0;
+
+    BILLS.forEach((denomination) => {
+      const count = bills[denomination] ?? 0;
+      actualAmount += denomination * count;
+    });
+
+    COINS_RUBLES.forEach((denomination) => {
+      const count = coinsRubles[denomination] ?? 0;
+      actualAmount += denomination * count;
+    });
+
+    COINS_KOPECKS.forEach((denomination) => {
+      const count = coinsKopecks[denomination] ?? 0;
+      actualAmount += (denomination / 100) * count;
+    });
+
+    return actualAmount - initialAmount;
+  };
 
   // Мемоизация вычисления общей суммы
   const totalAmount = useMemo(() => {
@@ -108,22 +130,23 @@ export const useCashCounter = () => {
     onRestoreCancel: handleRestoreCancel,
   });
 
-  const handleSave = useCallback(() => {
-    const entry: CashEntry = {
-      id: Date.now().toString(),
-      timestamp: Date.now(),
-      initialAmount: state.initialAmount,
-      bills: { ...state.bills },
-      coinsRubles: { ...state.coinsRubles },
-      coinsKopecks: { ...state.coinsKopecks },
-      totalAmount,
-    };
-    saveHistoryEntry(entry);
-    setHistoryRefreshTrigger((prev) => prev + 1);
-    showSuccess('Подсчет сохранен в историю!');
-    // Очищаем черновик после сохранения в историю
-    clearDraft();
-  }, [state, totalAmount, showSuccess, clearDraft]);
+  const handleSave = useCallback(async () => {
+    try {
+      await cashApi.saveEntry({
+        initialAmount: state.initialAmount,
+        bills: { ...state.bills },
+        coinsRubles: { ...state.coinsRubles },
+        coinsKopecks: { ...state.coinsKopecks },
+      });
+      setHistoryRefreshTrigger((prev) => prev + 1);
+      showSuccess('Подсчет сохранен в историю!');
+      // Очищаем черновик после сохранения в историю
+      clearDraft();
+    } catch (error) {
+      console.error('Failed to save entry:', error);
+      showSuccess('Не удалось сохранить подсчет');
+    }
+  }, [state, showSuccess, clearDraft]);
 
   const handleLoadEntry = useCallback((entry: CashEntry) => {
     setState({

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SalaryCalculation } from '../types';
-import { getHistory, clearHistory, deleteSalaryEntry } from '../services/salaryStorage';
+import { salaryApi } from '../../../shared/api/salary/api';
+import { useNotification } from '../../../contexts/NotificationContext';
 import styles from './SalaryHistory.module.css';
 
 interface SalaryHistoryProps {
@@ -9,22 +10,32 @@ interface SalaryHistoryProps {
 }
 
 export const SalaryHistory: React.FC<SalaryHistoryProps> = ({ onLoadEntry, refreshTrigger }) => {
+  const { showError } = useNotification();
   const [entries, setEntries] = useState<SalaryCalculation[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     loadHistory();
   }, [refreshTrigger]);
 
-  const loadHistory = () => {
-    const history = getHistory();
-    setEntries(history);
+  const loadHistory = async () => {
+    try {
+      setLoading(true);
+      const history = await salaryApi.getHistory();
+      setEntries(history);
+    } catch (error) {
+      console.error('Failed to load history:', error);
+      showError('Не удалось загрузить историю');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleClear = () => {
-    if (window.confirm('Вы уверены, что хотите очистить историю?')) {
-      clearHistory();
-      setEntries([]);
+    // Очистка истории не реализована на бэкенде, можно добавить позже
+    if (window.confirm('Очистка всей истории пока не доступна. Вы можете удалять записи по одной.')) {
+      // Пока ничего не делаем
     }
   };
 
@@ -33,10 +44,15 @@ export const SalaryHistory: React.FC<SalaryHistoryProps> = ({ onLoadEntry, refre
     setIsOpen(false);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm('Вы уверены, что хотите удалить эту запись?')) {
-      deleteSalaryEntry(id);
-      loadHistory();
+      try {
+        await salaryApi.deleteCalculation(id);
+        await loadHistory();
+      } catch (error) {
+        console.error('Failed to delete calculation:', error);
+        showError('Не удалось удалить запись');
+      }
     }
   };
 
@@ -93,7 +109,9 @@ export const SalaryHistory: React.FC<SalaryHistoryProps> = ({ onLoadEntry, refre
         </div>
       </div>
 
-      {entries.length === 0 ? (
+      {loading ? (
+        <p className={styles.empty} role="status" aria-live="polite">Загрузка...</p>
+      ) : entries.length === 0 ? (
         <p className={styles.empty} role="status" aria-live="polite">История пуста</p>
       ) : (
         <div className={styles.list} role="list" aria-label="Список записей истории расчетов">

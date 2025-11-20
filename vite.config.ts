@@ -6,6 +6,27 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
+      // Прокси для API endpoints на Express сервер
+      '/api/auth': {
+        target: 'http://localhost:8880',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/api/cash': {
+        target: 'http://localhost:8880',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/api/salary': {
+        target: 'http://localhost:8880',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/api/admin': {
+        target: 'http://localhost:8880',
+        changeOrigin: true,
+        secure: false,
+      },
       '/api/moysklad': {
         target: 'https://api.moysklad.ru',
         changeOrigin: true,

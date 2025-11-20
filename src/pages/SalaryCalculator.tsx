@@ -8,15 +8,11 @@ import { SalaryHistory } from '../features/salary-calculator/components/SalaryHi
 import { SalaryActions } from '../features/salary-calculator/components/SalaryActions';
 import { ThemeToggle } from '../shared/components/ThemeToggle';
 import { ModeToggle } from '../features/salary-calculator/components/ModeToggle';
-import { MoyskladSettingsComponent } from '../features/salary-calculator/components/MoyskladSettings';
 import { useNotification } from '../contexts/NotificationContext';
-import { calculateSalaryBreakdown } from '../features/salary-calculator/services/salaryCalculations';
-import { saveSalaryEntry } from '../features/salary-calculator/services/salaryStorage';
+import { salaryApi } from '../shared/api/salary/api';
 import { exportSalaryToExcel } from '../features/salary-calculator/services/salaryExport';
-import { getMoyskladSettings, hasMoyskladSettings } from '../shared/api/moysklad/storage';
-import { calculateSalesByDay, calculateTargetProductsByDay, MoyskladApiError } from '../shared/api/moysklad/client';
+import { adminApi } from '../shared/api/admin/api';
 import { SalaryState, SalaryCalculation } from '../features/salary-calculator/types';
-import { MoyskladSettings } from '../shared/api/moysklad/types';
 import { logger } from '../shared/utils/logger';
 import { useAutoSave } from '../shared/hooks/useAutoSave';
 import { saveSalaryCalculatorDraft, loadSalaryCalculatorDraft, clearSalaryCalculatorDraft } from '../features/salary-calculator/services/salaryDraftStorage';
@@ -35,45 +31,64 @@ export const SalaryCalculator: React.FC = () => {
   const { showSuccess, showError, showInfo } = useNotification();
   const [state, setState] = useState<SalaryState>(INITIAL_STATE);
   const [historyRefreshTrigger, setHistoryRefreshTrigger] = useState(0);
-  const [moyskladSettings, setMoyskladSettings] = useState<MoyskladSettings | null>(null);
+  const [moyskladSettings, setMoyskladSettings] = useState<{ storeId: string | null } | null>(null);
   const [loadingDays, setLoadingDays] = useState<string[]>([]);
   const [errorDays, setErrorDays] = useState<{ [date: string]: string }>({});
   const [dataSource, setDataSource] = useState<{ [date: string]: 'manual' | 'api' }>({});
   const loadedDaysRef = useRef<Set<string>>(new Set());
   const initialStateRef = useRef<SalaryState>(INITIAL_STATE);
 
-  const breakdown = useMemo(() => {
-    return calculateSalaryBreakdown(state);
-  }, [state]);
+  const [breakdown, setBreakdown] = useState({
+    rateSalary: 0,
+    salesBonus: 0,
+    targetBonus: 0,
+    totalSalary: 0,
+    workDaysCount: 0,
+  });
 
-  // Загрузка настроек API при монтировании
+  // Загрузка настроек API при монтировании (только storeId, токен на сервере)
   useEffect(() => {
-    if (hasMoyskladSettings()) {
-      const settings = getMoyskladSettings();
-      if (settings) {
-        setMoyskladSettings(settings);
+    const loadSettings = async () => {
+      try {
+        const settings = await adminApi.getMoyskladSettings();
+        if (settings.storeId) {
+          setMoyskladSettings({ storeId: settings.storeId });
+        }
+      } catch (error) {
+        // Не критично, если не админ или настройки не заданы
+        console.log('Moysklad settings not available');
       }
-    }
+    };
+    loadSettings();
   }, []);
 
-  // Обработка изменения настроек API
-  const handleSettingsChange = useCallback((settings: MoyskladSettings | null) => {
-    setMoyskladSettings(settings);
-    // Если настройки изменились, сбрасываем данные источников
-    setDataSource({});
+  // Расчет breakdown через API
+  useEffect(() => {
+    const calculateBreakdown = async () => {
+      try {
+        const result = await salaryApi.calculate({
+          dailyRate: state.dailyRate,
+          workDays: state.workDays,
+          salesPercentage: state.salesPercentage,
+          salesByDay: state.salesByDay,
+          targetProductsCount: state.targetProductsCount,
+        });
+        setBreakdown(result.breakdown);
+      } catch (error) {
+        console.error('Failed to calculate breakdown:', error);
+      }
+    };
+    calculateBreakdown();
+  }, [state]);
+
+  // Обработка изменения настроек API (не используется, настройки только в админке)
+  const handleSettingsChange = useCallback(() => {
+    // Настройки изменяются только в админке
   }, []);
 
   // Обработка изменения режима
   const handleModeChange = useCallback((mode: 'manual' | 'api') => {
     setState((prev) => ({ ...prev, mode }));
-    
-    // Если переключились в режим API, загружаем настройки
-    if (mode === 'api' && hasMoyskladSettings()) {
-      const settings = getMoyskladSettings();
-      if (settings) {
-        setMoyskladSettings(settings);
-      }
-    }
     
     // Если переключились в ручной режим, очищаем данные источников
     if (mode === 'manual') {
@@ -110,7 +125,7 @@ export const SalaryCalculator: React.FC = () => {
 
   // Загрузка данных из API для выбранных дней
   const loadDataFromAPI = useCallback(async (dates: string[]) => {
-    if (!moyskladSettings || !moyskladSettings.accessToken || !moyskladSettings.storeId) {
+    if (!moyskladSettings || !moyskladSettings.storeId) {
       return;
     }
 
@@ -125,14 +140,14 @@ export const SalaryCalculator: React.FC = () => {
       return newLoadingDays;
     });
 
-      // Очищаем ошибки для загружаемых дней
-      setErrorDays((prev) => {
-        const newErrors = { ...prev };
-        dates.forEach(date => {
-          delete newErrors[date];
-        });
-        return newErrors;
+    // Очищаем ошибки для загружаемых дней
+    setErrorDays((prev) => {
+      const newErrors = { ...prev };
+      dates.forEach(date => {
+        delete newErrors[date];
       });
+      return newErrors;
+    });
 
     const newSalesByDay = { ...state.salesByDay };
     const newTargetProductsCount = { ...state.targetProductsCount };
@@ -140,48 +155,28 @@ export const SalaryCalculator: React.FC = () => {
     const newErrors: { [date: string]: string } = {};
 
     try {
-      // Загружаем данные для каждого дня
+      // Загружаем данные через API
+      const moyskladData = await salaryApi.getMoyskladData(dates);
+
+      // Обрабатываем данные для каждого дня
       for (const date of dates) {
-        try {
-          // Подсчитываем продажи
-          const sales = await calculateSalesByDay(
-            moyskladSettings.accessToken,
-            date,
-            moyskladSettings.storeId
-          );
-
-          // Подсчитываем целевые продукты
-          const targetProducts = await calculateTargetProductsByDay(
-            moyskladSettings.accessToken,
-            date,
-            moyskladSettings
-          );
-
-          newSalesByDay[date] = sales.total / 100; // Конвертируем из копеек в рубли
-          newTargetProductsCount[date] = targetProducts;
-          newDataSource[date] = 'api';
-          // Отмечаем день как успешно загруженный
-          loadedDaysRef.current.add(date);
-        } catch (error) {
-          logger.error(`Ошибка при загрузке данных за ${date}:`, error);
-          let errorMessage = 'Не удалось загрузить данные';
-          if (error instanceof MoyskladApiError) {
-            errorMessage = error.message;
-            // Показываем уведомление об ошибке для пользователя
-            showError(`Ошибка загрузки данных за ${formatDate(date)}: ${error.message}`);
-          } else {
-            showError(`Ошибка загрузки данных за ${formatDate(date)}`);
-          }
-          newErrors[date] = errorMessage;
-          // Оставляем старые значения, если они есть, или устанавливаем 0
+        const dayData = moyskladData[date];
+        
+        if ('error' in dayData) {
+          newErrors[date] = dayData.error;
+          showError(`Ошибка загрузки данных за ${formatDate(date)}: ${dayData.error}`);
           if (!(date in newSalesByDay)) {
             newSalesByDay[date] = 0;
           }
           if (!(date in newTargetProductsCount)) {
             newTargetProductsCount[date] = 0;
           }
-          // Удаляем из ref при ошибке, чтобы можно было повторить загрузку
           loadedDaysRef.current.delete(date);
+        } else {
+          newSalesByDay[date] = dayData.sales / 100; // Конвертируем из копеек в рубли
+          newTargetProductsCount[date] = dayData.targetProducts;
+          newDataSource[date] = 'api';
+          loadedDaysRef.current.add(date);
         }
       }
 
@@ -192,18 +187,14 @@ export const SalaryCalculator: React.FC = () => {
       }));
       setDataSource(newDataSource);
       setErrorDays((prev) => ({ ...prev, ...newErrors }));
-    } catch (error) {
+    } catch (error: any) {
       logger.error('Ошибка при загрузке данных из API:', error);
-      if (error instanceof MoyskladApiError) {
-        showError(`Ошибка API: ${error.message}`);
-      } else {
-        showError('Произошла ошибка при загрузке данных из API');
-      }
+      showError(error.message || 'Произошла ошибка при загрузке данных из API');
     } finally {
       // Удаляем дни из списка загрузки
       setLoadingDays((prev) => prev.filter(date => !dates.includes(date)));
     }
-  }, [moyskladSettings, state.salesByDay, state.targetProductsCount, dataSource]);
+  }, [moyskladSettings, state.salesByDay, state.targetProductsCount, dataSource, showError]);
 
   // Автоматическая загрузка данных при выборе дней в режиме API
   useEffect(() => {
@@ -414,23 +405,24 @@ export const SalaryCalculator: React.FC = () => {
     onRestoreCancel: handleRestoreCancel,
   });
 
-  const handleSave = useCallback(() => {
-    const entry: SalaryCalculation = {
-      id: Date.now().toString(),
-      timestamp: Date.now(),
-      dailyRate: state.dailyRate,
-      workDays: state.workDays,
-      salesPercentage: state.salesPercentage,
-      salesByDay: { ...state.salesByDay },
-      targetProductsCount: { ...state.targetProductsCount },
-      totalSalary: breakdown.totalSalary,
-    };
-    saveSalaryEntry(entry);
-    setHistoryRefreshTrigger((prev) => prev + 1);
-    showSuccess('Расчет зарплаты сохранен в историю!');
-    // Очищаем черновик после сохранения в историю
-    clearDraft();
-  }, [state, breakdown, showSuccess, clearDraft]);
+  const handleSave = useCallback(async () => {
+    try {
+      await salaryApi.saveCalculation({
+        dailyRate: state.dailyRate,
+        workDays: state.workDays,
+        salesPercentage: state.salesPercentage,
+        salesByDay: { ...state.salesByDay },
+        targetProductsCount: { ...state.targetProductsCount },
+      });
+      setHistoryRefreshTrigger((prev) => prev + 1);
+      showSuccess('Расчет зарплаты сохранен в историю!');
+      // Очищаем черновик после сохранения в историю
+      clearDraft();
+    } catch (error) {
+      console.error('Failed to save calculation:', error);
+      showError('Не удалось сохранить расчет');
+    }
+  }, [state, showSuccess, showError, clearDraft]);
 
   const handleLoadEntry = useCallback((entry: SalaryCalculation) => {
     // Игнорируем поле targetProductBonus, если оно есть в старых записях
@@ -548,8 +540,13 @@ export const SalaryCalculator: React.FC = () => {
           onModeChange={handleModeChange}
         />
 
-        {state.mode === 'api' && (
-          <MoyskladSettingsComponent onSettingsChange={handleSettingsChange} />
+        {state.mode === 'api' && !moyskladSettings?.storeId && (
+          <div style={{ padding: '1rem', background: 'var(--card-bg)', borderRadius: '8px', marginBottom: '1rem' }}>
+            <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
+              Для работы с API МойСклад необходимо настроить токен и точку продажи в{' '}
+              <Link to="/admin" style={{ color: 'var(--accent-primary)' }}>админ панели</Link>.
+            </p>
+          </div>
         )}
 
         <DatePicker
