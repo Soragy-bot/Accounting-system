@@ -8,7 +8,9 @@ const __dirname = dirname(__filename);
 
 // Читаем .env файл с правильной кодировкой
 const envPath = join(__dirname, '../../.env');
+console.log('Ищем .env файл по пути:', envPath);
 if (existsSync(envPath)) {
+    console.log('✓ .env файл найден');
     try {
         // Читаем файл как буфер, чтобы определить кодировку
         const buffer = readFileSync(envPath);
@@ -35,14 +37,49 @@ if (existsSync(envPath)) {
 
         // Парсим содержимое через dotenv
         const parsed = dotenv.parse(content);
+
+        // Очищаем значения от кавычек и пробелов
+        Object.keys(parsed).forEach(key => {
+            let value = parsed[key];
+            // Удаляем кавычки в начале и конце, если они есть
+            if (typeof value === 'string') {
+                value = value.trim();
+                if ((value.startsWith('"') && value.endsWith('"')) ||
+                    (value.startsWith("'") && value.endsWith("'"))) {
+                    value = value.slice(1, -1);
+                }
+                parsed[key] = value;
+            }
+        });
+
         Object.assign(process.env, parsed);
+
+        // Логируем загруженные переменные Telegram (без секретов) для отладки
+        if (parsed.TELEGRAM_DOMAIN) {
+            console.log('✓ TELEGRAM_DOMAIN загружен из .env:', parsed.TELEGRAM_DOMAIN);
+            console.log('  Длина значения:', parsed.TELEGRAM_DOMAIN.length);
+        } else {
+            console.warn('⚠ TELEGRAM_DOMAIN не найден в .env файле');
+            console.warn('  Доступные ключи в .env:', Object.keys(parsed).filter(k => k.includes('TELEGRAM')).join(', ') || 'нет');
+        }
     } catch (error) {
         console.warn('Ошибка при чтении .env файла, используется dotenv.config():', error.message);
         dotenv.config();
     }
 } else {
+    console.warn('⚠ .env файл не найден по пути:', envPath);
+    console.warn('  Используется dotenv.config() для поиска .env в корне проекта');
     dotenv.config();
 }
+
+// Функция для безопасного получения переменной окружения с удалением пробелов
+const getEnv = (key, defaultValue = '') => {
+    const value = process.env[key];
+    if (value === undefined || value === null) {
+        return defaultValue;
+    }
+    return String(value).trim();
+};
 
 export const config = {
     port: process.env.PORT || 8880,
@@ -60,14 +97,23 @@ export const config = {
         algorithm: 'aes-256-cbc',
     },
     telegram: {
-        botToken: process.env.TELEGRAM_BOT_TOKEN || '',
-        clientId: process.env.TELEGRAM_CLIENT_ID || '',
-        clientSecret: process.env.TELEGRAM_CLIENT_SECRET || '',
-        domain: process.env.TELEGRAM_DOMAIN || '',
+        botToken: getEnv('TELEGRAM_BOT_TOKEN'),
+        clientId: getEnv('TELEGRAM_CLIENT_ID'),
+        clientSecret: getEnv('TELEGRAM_CLIENT_SECRET'),
+        domain: getEnv('TELEGRAM_DOMAIN'),
     },
     cors: {
         origin: process.env.CORS_ORIGIN || '*',
         credentials: true,
     },
 };
+
+// Логируем конфигурацию Telegram при загрузке (без секретов)
+if (config.telegram.domain) {
+    console.log('✓ Telegram конфигурация загружена. Домен:', config.telegram.domain);
+    console.log('✓ Client ID:', config.telegram.clientId ? 'установлен' : 'не установлен');
+} else {
+    console.warn('⚠ TELEGRAM_DOMAIN не настроен в конфигурации');
+    console.warn('  Проверьте, что переменная TELEGRAM_DOMAIN установлена в .env файле');
+}
 

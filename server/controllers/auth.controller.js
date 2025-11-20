@@ -7,8 +7,15 @@ export const telegramAuth = (req, res) => {
     // Домен должен быть зарегистрирован в настройках бота через @BotFather
     const domain = config.telegram.domain;
 
-    if (!domain) {
-        return res.status(500).json({ error: 'TELEGRAM_DOMAIN не настроен в переменных окружения' });
+    if (!domain || domain.trim() === '') {
+        console.error('Ошибка: TELEGRAM_DOMAIN не настроен');
+        console.error('  Проверьте переменную TELEGRAM_DOMAIN в .env файле');
+        console.error('  Текущее значение process.env.TELEGRAM_DOMAIN:', process.env.TELEGRAM_DOMAIN);
+        console.error('  Текущее значение config.telegram.domain:', config.telegram.domain);
+        return res.status(500).json({
+            error: 'TELEGRAM_DOMAIN не настроен в переменных окружения',
+            details: 'Проверьте, что переменная TELEGRAM_DOMAIN установлена в .env файле'
+        });
     }
 
     // Формируем origin (только домен) для Telegram OAuth
