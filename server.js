@@ -10,8 +10,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Загружаем переменные окружения с правильной обработкой кодировки
+// ВАЖНО: Это должно быть выполнено ДО импорта любых модулей, которые используют config
 const envPath = join(__dirname, '.env');
+console.log('[server.js] Ищем .env файл по пути:', envPath);
 if (existsSync(envPath)) {
+  console.log('[server.js] ✓ .env файл найден');
   try {
     const buffer = readFileSync(envPath);
     let content;
@@ -32,13 +35,44 @@ if (existsSync(envPath)) {
       content = buffer.toString('utf8').replace(/^\uFEFF/, '');
     }
     const parsed = dotenv.parse(content);
+    
+    // Очищаем значения от кавычек и пробелов
+    Object.keys(parsed).forEach(key => {
+      let value = parsed[key];
+      if (typeof value === 'string') {
+        value = value.trim();
+        if ((value.startsWith('"') && value.endsWith('"')) || 
+            (value.startsWith("'") && value.endsWith("'"))) {
+          value = value.slice(1, -1);
+        }
+        parsed[key] = value;
+      }
+    });
+    
     Object.assign(process.env, parsed);
+    
+    // Логируем загруженные переменные Telegram для отладки
+    if (parsed.TELEGRAM_DOMAIN) {
+      console.log('✓ [server.js] TELEGRAM_DOMAIN загружен:', parsed.TELEGRAM_DOMAIN);
+    } else {
+      console.warn('⚠ [server.js] TELEGRAM_DOMAIN не найден в .env файле');
+    }
   } catch (error) {
-    console.warn('Ошибка при чтении .env файла, используется dotenv.config():', error.message);
+    console.warn('[server.js] Ошибка при чтении .env файла, используется dotenv.config():', error.message);
     dotenv.config();
   }
 } else {
+  console.warn('[server.js] ⚠ .env файл не найден по пути:', envPath);
+  console.warn('[server.js] Используется dotenv.config() для поиска .env в корне проекта');
   dotenv.config();
+}
+
+// Проверяем, что TELEGRAM_DOMAIN загружен
+if (process.env.TELEGRAM_DOMAIN) {
+  console.log('[server.js] ✓ TELEGRAM_DOMAIN найден в process.env:', process.env.TELEGRAM_DOMAIN.trim());
+} else {
+  console.error('[server.js] ✗ TELEGRAM_DOMAIN НЕ найден в process.env');
+  console.error('[server.js] Доступные переменные с TELEGRAM:', Object.keys(process.env).filter(k => k.includes('TELEGRAM')).join(', ') || 'нет');
 }
 
 // Импортируем роуты

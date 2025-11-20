@@ -8,6 +8,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "start": "node server.js",
+    "check-env": "node check-env.js",
     "migrate": "node server/db/migrate.js",
     "migrate:up": "node server/db/migrate.js",
     "test": "jest",

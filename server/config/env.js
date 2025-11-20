@@ -55,12 +55,17 @@ if (existsSync(envPath)) {
         Object.assign(process.env, parsed);
 
         // Логируем загруженные переменные Telegram (без секретов) для отладки
+        const telegramKeys = Object.keys(parsed).filter(k => k.includes('TELEGRAM'));
+        console.log('[env.js] Загружены переменные Telegram из .env:', telegramKeys.join(', ') || 'нет');
+
         if (parsed.TELEGRAM_DOMAIN) {
-            console.log('✓ TELEGRAM_DOMAIN загружен из .env:', parsed.TELEGRAM_DOMAIN);
-            console.log('  Длина значения:', parsed.TELEGRAM_DOMAIN.length);
+            console.log('[env.js] ✓ TELEGRAM_DOMAIN загружен из .env:', parsed.TELEGRAM_DOMAIN);
+            console.log('[env.js]   Длина значения:', parsed.TELEGRAM_DOMAIN.length);
+            console.log('[env.js]   Тип значения:', typeof parsed.TELEGRAM_DOMAIN);
         } else {
-            console.warn('⚠ TELEGRAM_DOMAIN не найден в .env файле');
-            console.warn('  Доступные ключи в .env:', Object.keys(parsed).filter(k => k.includes('TELEGRAM')).join(', ') || 'нет');
+            console.error('[env.js] ✗ TELEGRAM_DOMAIN не найден в .env файле');
+            console.error('[env.js]   Доступные ключи с TELEGRAM:', telegramKeys.join(', ') || 'нет');
+            console.error('[env.js]   Всего загружено переменных из .env:', Object.keys(parsed).length);
         }
     } catch (error) {
         console.warn('Ошибка при чтении .env файла, используется dotenv.config():', error.message);
@@ -76,9 +81,16 @@ if (existsSync(envPath)) {
 const getEnv = (key, defaultValue = '') => {
     const value = process.env[key];
     if (value === undefined || value === null) {
+        if (key === 'TELEGRAM_DOMAIN') {
+            console.warn(`[env.js] getEnv: ${key} не найден в process.env`);
+        }
         return defaultValue;
     }
-    return String(value).trim();
+    const trimmed = String(value).trim();
+    if (key === 'TELEGRAM_DOMAIN' && !trimmed) {
+        console.warn(`[env.js] getEnv: ${key} найден, но значение пустое после trim. Исходное значение: "${value}"`);
+    }
+    return trimmed;
 };
 
 export const config = {
@@ -109,11 +121,17 @@ export const config = {
 };
 
 // Логируем конфигурацию Telegram при загрузке (без секретов)
+console.log('[env.js] Проверка конфигурации Telegram:');
+console.log('[env.js] process.env.TELEGRAM_DOMAIN:', process.env.TELEGRAM_DOMAIN || 'не определен');
+console.log('[env.js] config.telegram.domain:', config.telegram.domain || 'пусто');
 if (config.telegram.domain) {
-    console.log('✓ Telegram конфигурация загружена. Домен:', config.telegram.domain);
-    console.log('✓ Client ID:', config.telegram.clientId ? 'установлен' : 'не установлен');
+    console.log('[env.js] ✓ Telegram конфигурация загружена. Домен:', config.telegram.domain);
+    console.log('[env.js] ✓ Client ID:', config.telegram.clientId ? 'установлен' : 'не установлен');
 } else {
-    console.warn('⚠ TELEGRAM_DOMAIN не настроен в конфигурации');
-    console.warn('  Проверьте, что переменная TELEGRAM_DOMAIN установлена в .env файле');
+    console.error('[env.js] ✗ TELEGRAM_DOMAIN не настроен в конфигурации');
+    console.error('[env.js]   process.env.TELEGRAM_DOMAIN =', process.env.TELEGRAM_DOMAIN);
+    console.error('[env.js]   config.telegram.domain =', config.telegram.domain);
+    console.error('[env.js]   Проверьте, что переменная TELEGRAM_DOMAIN установлена в .env файле');
+    console.error('[env.js]   Все переменные с TELEGRAM:', Object.keys(process.env).filter(k => k.includes('TELEGRAM')).join(', ') || 'нет');
 }
 
