@@ -81,10 +81,6 @@ export const SalaryCalculator: React.FC = () => {
     calculateBreakdown();
   }, [state]);
 
-  // Обработка изменения настроек API (не используется, настройки только в админке)
-  const handleSettingsChange = useCallback(() => {
-    // Настройки изменяются только в админке
-  }, []);
 
   // Обработка изменения режима
   const handleModeChange = useCallback((mode: 'manual' | 'api') => {

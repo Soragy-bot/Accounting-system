@@ -6,8 +6,7 @@ import { TARGET_PRODUCT_BONUS } from '../constants';
 type SalaryBreakdown = ReturnType<typeof calculateSalaryBreakdown>;
 
 const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('ru-RU', {
+  return new Date(dateString).toLocaleDateString('ru-RU', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -21,104 +20,104 @@ const styles = {
   mainHeader: {
     font: { bold: true, sz: 16, color: { rgb: 'FFFFFF' } },
     fill: { fgColor: { rgb: '4472C4' } },
-    alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+    alignment: { horizontal: 'center' as const, vertical: 'center' as const, wrapText: true },
     border: {
-      top: { style: 'thin', color: { rgb: '000000' } },
-      bottom: { style: 'thin', color: { rgb: '000000' } },
-      left: { style: 'thin', color: { rgb: '000000' } },
-      right: { style: 'thin', color: { rgb: '000000' } },
+      top: { style: 'thin' as const, color: { rgb: '000000' } },
+      bottom: { style: 'thin' as const, color: { rgb: '000000' } },
+      left: { style: 'thin' as const, color: { rgb: '000000' } },
+      right: { style: 'thin' as const, color: { rgb: '000000' } },
     },
   },
   // Заголовок секции
   sectionHeader: {
     font: { bold: true, sz: 12, color: { rgb: 'FFFFFF' } },
     fill: { fgColor: { rgb: '5B9BD5' } },
-    alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
+    alignment: { horizontal: 'left' as const, vertical: 'center' as const, wrapText: true },
     border: {
-      top: { style: 'thin', color: { rgb: '000000' } },
-      bottom: { style: 'thin', color: { rgb: '000000' } },
-      left: { style: 'thin', color: { rgb: '000000' } },
-      right: { style: 'thin', color: { rgb: '000000' } },
+      top: { style: 'thin' as const, color: { rgb: '000000' } },
+      bottom: { style: 'thin' as const, color: { rgb: '000000' } },
+      left: { style: 'thin' as const, color: { rgb: '000000' } },
+      right: { style: 'thin' as const, color: { rgb: '000000' } },
     },
   },
   // Заголовок таблицы
   tableHeader: {
     font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } },
     fill: { fgColor: { rgb: '4472C4' } },
-    alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+    alignment: { horizontal: 'center' as const, vertical: 'center' as const, wrapText: true },
     border: {
-      top: { style: 'thin', color: { rgb: '000000' } },
-      bottom: { style: 'thin', color: { rgb: '000000' } },
-      left: { style: 'thin', color: { rgb: '000000' } },
-      right: { style: 'thin', color: { rgb: '000000' } },
+      top: { style: 'thin' as const, color: { rgb: '000000' } },
+      bottom: { style: 'thin' as const, color: { rgb: '000000' } },
+      left: { style: 'thin' as const, color: { rgb: '000000' } },
+      right: { style: 'thin' as const, color: { rgb: '000000' } },
     },
   },
   // Обычная ячейка
   cell: {
-    alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
+    alignment: { horizontal: 'left' as const, vertical: 'center' as const, wrapText: true },
     border: {
-      top: { style: 'thin', color: { rgb: 'CCCCCC' } },
-      bottom: { style: 'thin', color: { rgb: 'CCCCCC' } },
-      left: { style: 'thin', color: { rgb: 'CCCCCC' } },
-      right: { style: 'thin', color: { rgb: 'CCCCCC' } },
+      top: { style: 'thin' as const, color: { rgb: 'CCCCCC' } },
+      bottom: { style: 'thin' as const, color: { rgb: 'CCCCCC' } },
+      left: { style: 'thin' as const, color: { rgb: 'CCCCCC' } },
+      right: { style: 'thin' as const, color: { rgb: 'CCCCCC' } },
     },
   },
   // Ячейка с числом (выравнивание по правому краю)
   numberCell: {
-    alignment: { horizontal: 'right', vertical: 'center', wrapText: true },
+    alignment: { horizontal: 'right' as const, vertical: 'center' as const, wrapText: true },
     border: {
-      top: { style: 'thin', color: { rgb: 'CCCCCC' } },
-      bottom: { style: 'thin', color: { rgb: 'CCCCCC' } },
-      left: { style: 'thin', color: { rgb: 'CCCCCC' } },
-      right: { style: 'thin', color: { rgb: 'CCCCCC' } },
+      top: { style: 'thin' as const, color: { rgb: 'CCCCCC' } },
+      bottom: { style: 'thin' as const, color: { rgb: 'CCCCCC' } },
+      left: { style: 'thin' as const, color: { rgb: 'CCCCCC' } },
+      right: { style: 'thin' as const, color: { rgb: 'CCCCCC' } },
     },
   },
   // Итоговая строка
   totalRow: {
     font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } },
     fill: { fgColor: { rgb: '70AD47' } },
-    alignment: { horizontal: 'right', vertical: 'center', wrapText: true },
+    alignment: { horizontal: 'right' as const, vertical: 'center' as const, wrapText: true },
     border: {
-      top: { style: 'medium', color: { rgb: '000000' } },
-      bottom: { style: 'medium', color: { rgb: '000000' } },
-      left: { style: 'thin', color: { rgb: '000000' } },
-      right: { style: 'thin', color: { rgb: '000000' } },
+      top: { style: 'medium' as const, color: { rgb: '000000' } },
+      bottom: { style: 'medium' as const, color: { rgb: '000000' } },
+      left: { style: 'thin' as const, color: { rgb: '000000' } },
+      right: { style: 'thin' as const, color: { rgb: '000000' } },
     },
   },
   // Итоговая ячейка (левая колонка)
   totalLabel: {
     font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } },
     fill: { fgColor: { rgb: '70AD47' } },
-    alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
+    alignment: { horizontal: 'left' as const, vertical: 'center' as const, wrapText: true },
     border: {
-      top: { style: 'medium', color: { rgb: '000000' } },
-      bottom: { style: 'medium', color: { rgb: '000000' } },
-      left: { style: 'thin', color: { rgb: '000000' } },
-      right: { style: 'thin', color: { rgb: '000000' } },
+      top: { style: 'medium' as const, color: { rgb: '000000' } },
+      bottom: { style: 'medium' as const, color: { rgb: '000000' } },
+      left: { style: 'thin' as const, color: { rgb: '000000' } },
+      right: { style: 'thin' as const, color: { rgb: '000000' } },
     },
   },
   // Параметр (левая колонка)
   paramLabel: {
     font: { bold: false, sz: 11 },
     fill: { fgColor: { rgb: 'E7E6E6' } },
-    alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
+    alignment: { horizontal: 'left' as const, vertical: 'center' as const, wrapText: true },
     border: {
-      top: { style: 'thin', color: { rgb: 'CCCCCC' } },
-      bottom: { style: 'thin', color: { rgb: 'CCCCCC' } },
-      left: { style: 'thin', color: { rgb: 'CCCCCC' } },
-      right: { style: 'thin', color: { rgb: 'CCCCCC' } },
+      top: { style: 'thin' as const, color: { rgb: 'CCCCCC' } },
+      bottom: { style: 'thin' as const, color: { rgb: 'CCCCCC' } },
+      left: { style: 'thin' as const, color: { rgb: 'CCCCCC' } },
+      right: { style: 'thin' as const, color: { rgb: 'CCCCCC' } },
     },
   },
   // Значение параметра
   paramValue: {
     font: { bold: false, sz: 11 },
     fill: { fgColor: { rgb: 'FFFFFF' } },
-    alignment: { horizontal: 'right', vertical: 'center', wrapText: true },
+    alignment: { horizontal: 'right' as const, vertical: 'center' as const, wrapText: true },
     border: {
-      top: { style: 'thin', color: { rgb: 'CCCCCC' } },
-      bottom: { style: 'thin', color: { rgb: 'CCCCCC' } },
-      left: { style: 'thin', color: { rgb: 'CCCCCC' } },
-      right: { style: 'thin', color: { rgb: 'CCCCCC' } },
+      top: { style: 'thin' as const, color: { rgb: 'CCCCCC' } },
+      bottom: { style: 'thin' as const, color: { rgb: 'CCCCCC' } },
+      left: { style: 'thin' as const, color: { rgb: 'CCCCCC' } },
+      right: { style: 'thin' as const, color: { rgb: 'CCCCCC' } },
     },
   },
 };
@@ -139,7 +138,7 @@ export const exportSalaryToExcel = (
 
   // Лист 1: Общая информация
   // Параметры храним как числа для использования в формулах
-  const summaryData = [
+  const summaryData: (string | number)[][] = [
     ['Расчет зарплаты', ''],
     ['', ''],
     ['Параметры расчета', ''],
@@ -212,7 +211,7 @@ export const exportSalaryToExcel = (
 
   // Лист 2: Детали по дням
   if (state.workDays.length > 0) {
-    const dailyData = [
+    const dailyData: (string | number)[][] = [
       ['Дата', 'Продажи (₽)', 'Процент с продаж (₽)', 'Целевые товары (шт)', 'Бонус за товары (₽)', 'Итого за день (₽)'],
     ];
 
@@ -244,7 +243,7 @@ export const exportSalaryToExcel = (
     
     // Добавляем формулы для каждой строки данных
     // В xlsx-js-style строки нумеруются с 0, но в Excel формулы используют 1-based индексацию
-    state.workDays.forEach((date, index) => {
+    state.workDays.forEach((_date, index) => {
       const colB = XLSX.utils.encode_cell({ r: index + 1, c: 1 }); // B колонка (индекс 1)
       const colC = XLSX.utils.encode_cell({ r: index + 1, c: 2 }); // C колонка (индекс 2)
       const colD = XLSX.utils.encode_cell({ r: index + 1, c: 3 }); // D колонка (индекс 3)

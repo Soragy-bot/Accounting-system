@@ -12,7 +12,7 @@ interface MoyskladSettingsProps {
 }
 
 export const MoyskladSettingsComponent: React.FC<MoyskladSettingsProps> = ({ onSettingsChange }) => {
-    const { showSuccess, showError, showInfo } = useNotification();
+    const { showSuccess, showError } = useNotification();
     const [settings, setSettings] = useState<MoyskladSettings>(getDefaultMoyskladSettings());
     const [stores, setStores] = useState<Store[]>([]);
     const [loading, setLoading] = useState(false);

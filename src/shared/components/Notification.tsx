@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNotification, Notification as NotificationType } from '../../contexts/NotificationContext';
 import styles from './Notification.module.css';
 

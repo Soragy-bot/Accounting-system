@@ -1,5 +1,7 @@
 import { MoneyCount } from '../../shared/types';
 
+export type { MoneyCount };
+
 export interface CashEntry {
   id: string;
   timestamp: number;

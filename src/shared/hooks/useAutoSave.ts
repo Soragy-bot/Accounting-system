@@ -27,7 +27,6 @@ export function useAutoSave<T>({
   loadDraft,
   clearDraft,
   onRestore,
-  onRestoreCancel,
   enabled = true,
 }: UseAutoSaveOptions<T>): () => void {
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);

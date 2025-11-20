@@ -54,6 +54,12 @@ EXPOSE 8880
 # Set environment variable for port
 ENV PORT=8880
 
-# Start Express server
-CMD ["node", "server.js"]
+# Copy server directory for migrations
+COPY server ./server
+
+# Copy entrypoint script
+COPY docker-entrypoint.js ./
+
+# Start Express server (migrations run automatically via entrypoint)
+CMD ["node", "docker-entrypoint.js"]
 

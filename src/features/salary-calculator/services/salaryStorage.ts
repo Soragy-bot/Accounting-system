@@ -50,7 +50,7 @@ export const getHistory = (): SalaryCalculation[] => {
         typeof rest.targetProductsCount === 'object' &&
         typeof rest.totalSalary === 'number'
       ) {
-        return rest as SalaryCalculation;
+        return rest as unknown as SalaryCalculation;
       }
       // Если структура неверная, логируем предупреждение и возвращаем дефолтные значения
       logger.warn('Обнаружена запись с неверной структурой, используем дефолтные значения', { entryId: rest.id });
@@ -58,10 +58,10 @@ export const getHistory = (): SalaryCalculation[] => {
         id: (rest.id as string) || Date.now().toString(),
         timestamp: (rest.timestamp as number) || Date.now(),
         dailyRate: (rest.dailyRate as number) || 0,
-        workDays: (rest.workDays as string[]) || [],
+        workDays: (Array.isArray(rest.workDays) ? rest.workDays : []) as string[],
         salesPercentage: (rest.salesPercentage as number) || 0,
-        salesByDay: (rest.salesByDay as { [date: string]: number }) || {},
-        targetProductsCount: (rest.targetProductsCount as { [date: string]: number }) || {},
+        salesByDay: (typeof rest.salesByDay === 'object' && rest.salesByDay !== null ? rest.salesByDay : {}) as { [date: string]: number },
+        targetProductsCount: (typeof rest.targetProductsCount === 'object' && rest.targetProductsCount !== null ? rest.targetProductsCount : {}) as { [date: string]: number },
         totalSalary: (rest.totalSalary as number) || 0,
       };
     });
